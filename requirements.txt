@@ -1,0 +1,19 @@
+# Health Coach Skill Dependencies
+# Python 3.8+
+
+# Database
+# sqlite3 (built-in)
+
+# OCR & Vision
+openai>=1.0.0
+
+# Web Dashboard (Optional)
+flask>=2.0.0
+
+# Optional: For macOS Vision fallback (Tesseract)
+# pytesseract>=0.3.10
+# Pillow>=9.0.0
+
+# Development & Testing
+# pytest>=7.0.0
+# pytest-cov>=4.0.0
