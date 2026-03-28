@@ -322,15 +322,35 @@ def create_templates():
         }
         .pantry-item {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            flex-direction: column;
             padding: 12px;
             background: white;
             border-radius: 8px;
             border: 1px solid #eee;
+            gap: 8px;
+        }
+        .pantry-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         .pantry-name { font-weight: 500; }
-        .pantry-qty { color: #666; font-size: 0.9em; }
+        .pantry-qty { color: #666; font-size: 0.85em; }
+        .pantry-progress {
+            width: 100%;
+            height: 6px;
+            background: #e0e0e0;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .pantry-progress-bar {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.3s;
+        }
+        .pantry-progress-high { background: #4caf50; }
+        .pantry-progress-medium { background: #ff9800; }
+        .pantry-progress-low { background: #f44336; }
         .expiry-badge {
             padding: 3px 8px;
             border-radius: 12px;
@@ -576,15 +596,23 @@ def create_templates():
 
             function renderItem(item) {
                 const expiry = getExpiryBadge(item);
+                const percent = Math.round((item.remaining_g / item.initial_g) * 100);
+                const progressClass = percent > 50 ? 'pantry-progress-high' : percent > 20 ? 'pantry-progress-medium' : 'pantry-progress-low';
+
                 return `
                     <div class="pantry-item">
-                        <div>
-                            <div class="pantry-name">${item.food_name}</div>
-                            <div class="pantry-qty">剩余 ${item.remaining_g}g / 初始 ${item.initial_g}g</div>
+                        <div class="pantry-item-header">
+                            <div>
+                                <div class="pantry-name">${item.food_name}</div>
+                                <div class="pantry-qty">${item.remaining_g}g / ${item.initial_g}g (${percent}%)</div>
+                            </div>
+                            <div>
+                                <span class="expiry-badge ${expiry.class}">${expiry.text}</span>
+                                ${item.remaining_g > 0 ? `<button class="action-btn" onclick="openUseModal(${item.id}, '${item.food_name}', ${item.remaining_g})">使用</button>` : ''}
+                            </div>
                         </div>
-                        <div>
-                            <span class="expiry-badge ${expiry.class}">${expiry.text}</span>
-                            ${item.remaining_g > 0 ? `<button class="action-btn" onclick="openUseModal(${item.id}, '${item.food_name}', ${item.remaining_g})">使用</button>` : ''}
+                        <div class="pantry-progress">
+                            <div class="pantry-progress-bar ${progressClass}" style="width: ${percent}%"></div>
                         </div>
                     </div>
                 `;
