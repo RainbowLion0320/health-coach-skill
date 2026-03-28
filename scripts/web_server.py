@@ -101,12 +101,12 @@ def api_profile():
 
 @app.route('/api/pantry')
 def api_pantry():
-    """Get pantry items grouped by location."""
+    """Get pantry items grouped by location and category."""
     result = run_script('pantry_manager.py', 'remaining')
-    
+
     if result.get('status') == 'success':
         items = result['data']['items']
-        
+
         # Group by location (中文)
         grouped = {'冰箱': [], '冷冻': [], '干货区': [], '台面': []}
         for item in items:
@@ -114,16 +114,34 @@ def api_pantry():
             # 转换旧数据
             loc_map = {
                 'fridge': '冰箱',
-                'freezer': '冷冻', 
+                'freezer': '冷冻',
                 'pantry': '干货区',
                 'counter': '台面'
             }
             loc = loc_map.get(loc, loc)
             if loc in grouped:
                 grouped[loc].append(item)
-        
+
+        # Group by category (中文)
+        category_map = {
+            'protein': '蛋白质',
+            'vegetable': '蔬菜',
+            'carb': '碳水',
+            'fruit': '水果',
+            'dairy': '乳制品',
+            'fat': '脂肪'
+        }
+        by_category = {'蛋白质': [], '蔬菜': [], '碳水': [], '水果': [], '乳制品': [], '脂肪': [], '其他': []}
+        for item in items:
+            cat = item.get('category', '其他')
+            cat = category_map.get(cat, cat)
+            if cat not in by_category:
+                cat = '其他'
+            by_category[cat].append(item)
+
         result['data']['grouped'] = grouped
-    
+        result['data']['by_category'] = by_category
+
     return jsonify(result)
 
 
@@ -214,7 +232,32 @@ def create_templates():
             background: #667eea;
             color: white;
         }
-        
+
+        /* Pantry filter tabs */
+        .pantry-filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 0 5px;
+        }
+        .filter-tab {
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s;
+        }
+        .filter-tab:hover {
+            background: #f0f0f0;
+        }
+        .filter-tab.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
         /* Tab content */
         .tab-content {
             display: none;
@@ -401,6 +444,11 @@ def create_templates():
         <!-- Pantry Tab -->
         <div id="pantry" class="tab-content">
             <button class="add-btn" onclick="openAddModal()">➕ 添加食材</button>
+            <!-- Pantry Filter Tabs -->
+            <div class="pantry-filters">
+                <button class="filter-tab active" onclick="showPantryView('location')">📍 按储藏位置</button>
+                <button class="filter-tab" onclick="showPantryView('category')">🏷️ 按食材分类</button>
+            </div>
             <div id="pantry-content"><div class="loading">加载中...</div></div>
             <div id="success-msg" class="success-msg"></div>
         </div>
@@ -486,6 +534,92 @@ def create_templates():
             `;
         });
         
+        // Pantry view state
+        let pantryViewMode = 'location';
+        let pantryData = null;
+
+        // Switch pantry view
+        function showPantryView(mode) {
+            pantryViewMode = mode;
+            document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            renderPantry();
+        }
+
+        // Render pantry items
+        function renderPantry() {
+            if (!pantryData) return;
+
+            const today = new Date();
+
+            function getExpiryBadge(item) {
+                if (!item.expiry_date) return { class: 'expiry-ok', text: '新鲜' };
+                const expiry = new Date(item.expiry_date);
+                const daysLeft = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
+
+                if (daysLeft <= 1) return { class: 'expiry-urgent', text: '今天过期' };
+                if (daysLeft <= 3) return { class: 'expiry-soon', text: `${daysLeft}天后过期` };
+                return { class: 'expiry-ok', text: `${daysLeft}天后过期` };
+            }
+
+            function renderItem(item) {
+                const expiry = getExpiryBadge(item);
+                return `
+                    <div class="pantry-item">
+                        <div>
+                            <div class="pantry-name">${item.food_name}</div>
+                            <div class="pantry-qty">剩余 ${item.remaining_g}g / 初始 ${item.initial_g}g</div>
+                        </div>
+                        <div>
+                            <span class="expiry-badge ${expiry.class}">${expiry.text}</span>
+                            ${item.remaining_g > 0 ? `<button class="action-btn" onclick="openUseModal(${item.id}, '${item.food_name}', ${item.remaining_g})">使用</button>` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+
+            let html = '';
+
+            if (pantryViewMode === 'location') {
+                const grouped = pantryData.grouped;
+                const locationNames = {
+                    '冰箱': '❄️ 冰箱',
+                    '冷冻': '🧊 冷冻',
+                    '干货区': '📦 干货区',
+                    '台面': '🌡️ 台面'
+                };
+
+                for (const [location, items] of Object.entries(grouped)) {
+                    if (items.length === 0) continue;
+                    html += `<div class="location-section">`;
+                    html += `<div class="location-title">${locationNames[location]} (${items.length})</div>`;
+                    for (const item of items) html += renderItem(item);
+                    html += `</div>`;
+                }
+            } else {
+                const byCategory = pantryData.by_category;
+                const categoryIcons = {
+                    '蛋白质': '🥩',
+                    '蔬菜': '🥬',
+                    '碳水': '🍚',
+                    '水果': '🍎',
+                    '乳制品': '🥛',
+                    '脂肪': '🥑',
+                    '其他': '📦'
+                };
+
+                for (const [category, items] of Object.entries(byCategory)) {
+                    if (items.length === 0) continue;
+                    html += `<div class="location-section">`;
+                    html += `<div class="location-title">${categoryIcons[category]} ${category} (${items.length})</div>`;
+                    for (const item of items) html += renderItem(item);
+                    html += `</div>`;
+                }
+            }
+
+            document.getElementById('pantry-content').innerHTML = html;
+        }
+
         // Load pantry
         function loadPantry() {
             fetch('/api/pantry').then(r => r.json()).then(data => {
@@ -493,59 +627,8 @@ def create_templates():
                     document.getElementById('pantry-content').innerHTML = '<p>加载失败</p>';
                     return;
                 }
-                
-                const grouped = data.data.grouped;
-                const locationNames = {
-                    '冰箱': '❄️ 冰箱',
-                    '冷冻': '🧊 冷冻',
-                    '干货区': '📦 干货区',
-                    '台面': '🌡️ 台面'
-                };
-                
-                let html = '';
-                for (const [location, items] of Object.entries(grouped)) {
-                    if (items.length === 0) continue;
-                    
-                    html += `<div class="location-section">`;
-                    html += `<div class="location-title">${locationNames[location]} (${items.length})</div>`;
-                    
-                    for (const item of items) {
-                        const today = new Date();
-                        let expiryClass = 'expiry-ok';
-                        let expiryText = '新鲜';
-                        
-                        if (item.expiry_date) {
-                            const expiry = new Date(item.expiry_date);
-                            const daysLeft = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
-                            
-                            if (daysLeft <= 1) {
-                                expiryClass = 'expiry-urgent';
-                                expiryText = '今天过期';
-                            } else if (daysLeft <= 3) {
-                                expiryClass = 'expiry-soon';
-                                expiryText = `${daysLeft}天后过期`;
-                            } else {
-                                expiryText = `${daysLeft}天后过期`;
-                            }
-                        }
-                        
-                        html += `
-                            <div class="pantry-item">
-                                <div>
-                                    <div class="pantry-name">${item.food_name}</div>
-                                    <div class="pantry-qty">剩余 ${item.remaining_g}g / 初始 ${item.initial_g}g</div>
-                                </div>
-                                <div>
-                                    <span class="expiry-badge ${expiryClass}">${expiryText}</span>
-                                    ${item.remaining_g > 0 ? `<button class="action-btn" onclick="openUseModal(${item.id}, '${item.food_name}', ${item.remaining_g})">使用</button>` : ''}
-                                </div>
-                            </div>
-                        `;
-                    }
-                    html += `</div>`;
-                }
-                
-                document.getElementById('pantry-content').innerHTML = html;
+                pantryData = data.data;
+                renderPantry();
             });
         }
         
