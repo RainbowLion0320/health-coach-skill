@@ -53,15 +53,26 @@ def add_item(args) -> Dict[str, Any]:
         expiry_date = args.expiry
         
         # Auto-calculate expiry if not provided
-        if not expiry_date and food_id:
-            # Default expiry based on location
-            defaults = {
-                'fridge': 7,
-                'freezer': 90,
-                'pantry': 30
-            }
-            days = defaults.get(args.location, 7)
-            expiry_date = (datetime.strptime(purchase_date, '%Y-%m-%d') + timedelta(days=days)).strftime('%Y-%m-%d')
+        if not expiry_date:
+            # Try to get food-specific shelf life from database
+            shelf_life_days = None
+            if food_id:
+                cursor.execute('SELECT default_shelf_life_days FROM custom_foods WHERE id = ?', (food_id,))
+                row = cursor.fetchone()
+                if row and row[0]:
+                    shelf_life_days = row[0]
+            
+            # Fallback to location-based defaults
+            if shelf_life_days is None:
+                defaults = {
+                    'fridge': 7,
+                    'freezer': 90,
+                    'pantry': 30,
+                    'counter': 5
+                }
+                shelf_life_days = defaults.get(args.location, 7)
+            
+            expiry_date = (datetime.strptime(purchase_date, '%Y-%m-%d') + timedelta(days=shelf_life_days)).strftime('%Y-%m-%d')
         
         cursor.execute('''
             INSERT INTO pantry 
@@ -170,28 +181,110 @@ def list_items(args) -> Dict[str, Any]:
 def remove_item(args) -> Dict[str, Any]:
     """Remove item from pantry."""
     db_path = get_db_path(args.user)
-    
+
     if not os.path.exists(db_path):
         return {"status": "error", "error": "database_not_found", "message": "Database not found"}
-    
+
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    
+
     try:
         cursor.execute('SELECT id FROM users WHERE username = ?', (args.user,))
         user_id = cursor.fetchone()[0]
-        
+
         cursor.execute('''
             DELETE FROM pantry WHERE id = ? AND user_id = ?
         ''', (args.item_id, user_id))
-        
+
         conn.commit()
-        
+
         return {
             "status": "success",
             "message": f"Removed item {args.item_id}"
         }
-        
+
+    except sqlite3.Error as e:
+        return {"status": "error", "error": "database_error", "message": str(e)}
+    finally:
+        conn.close()
+
+
+def update_item(args) -> Dict[str, Any]:
+    """Update pantry item info (purchase date, expiry, location, notes)."""
+    db_path = get_db_path(args.user)
+
+    if not os.path.exists(db_path):
+        return {"status": "error", "error": "database_not_found", "message": "Database not found"}
+
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute('SELECT id FROM users WHERE username = ?', (args.user,))
+        user_id = cursor.fetchone()[0]
+
+        # Check if item exists
+        cursor.execute('SELECT food_name FROM pantry WHERE id = ? AND user_id = ?',
+                      (args.item_id, user_id))
+        row = cursor.fetchone()
+        if not row:
+            return {"status": "error", "error": "item_not_found", "message": "Item not found"}
+
+        food_name = row[0]
+
+        # Get current dates for recalculation
+        cursor.execute('SELECT purchase_date, expiry_date FROM pantry WHERE id = ?', (args.item_id,))
+        current = cursor.fetchone()
+        current_purchase = current[0]
+        current_expiry = current[1]
+
+        # Build update fields
+        updates = []
+        params = []
+
+        new_purchase = args.purchase or current_purchase
+        new_expiry = current_expiry
+
+        if args.purchase:
+            updates.append('purchase_date = ?')
+            params.append(args.purchase)
+
+        # Calculate expiry date from shelf life
+        if args.shelf_life and new_purchase:
+            try:
+                p_date = datetime.strptime(new_purchase, '%Y-%m-%d')
+                e_date = p_date + timedelta(days=args.shelf_life)
+                new_expiry = e_date.strftime('%Y-%m-%d')
+                updates.append('expiry_date = ?')
+                params.append(new_expiry)
+            except:
+                pass
+
+        if args.location:
+            updates.append('location = ?')
+            params.append(args.location)
+        if args.notes is not None:
+            updates.append('notes = ?')
+            params.append(args.notes)
+
+        if not updates:
+            return {"status": "error", "error": "no_updates", "message": "No fields to update"}
+
+        # Add updated_at and item_id
+        updates.append('updated_at = CURRENT_TIMESTAMP')
+        params.append(args.item_id)
+        params.append(user_id)
+
+        query = f"UPDATE pantry SET {', '.join(updates)} WHERE id = ? AND user_id = ?"
+        cursor.execute(query, params)
+        conn.commit()
+
+        return {
+            "status": "success",
+            "data": {"item_id": args.item_id, "food_name": food_name, "expiry_date": new_expiry},
+            "message": f"Updated {food_name}"
+        }
+
     except sqlite3.Error as e:
         return {"status": "error", "error": "database_error", "message": str(e)}
     finally:
@@ -323,21 +416,33 @@ def check_remaining(args) -> Dict[str, Any]:
         user_id = cursor.fetchone()[0]
         
         cursor.execute('''
-            SELECT p.id, p.food_name, p.quantity_g, p.remaining_g, 
-                   p.quantity_desc, p.location, p.expiry_date,
-                   c.calories_per_100g, c.protein_per_100g
+            SELECT p.id, p.food_name, p.quantity_g, p.remaining_g,
+                   p.quantity_desc, p.location, p.purchase_date, p.expiry_date,
+                   c.calories_per_100g, c.protein_per_100g, c.food_group
             FROM pantry p
             LEFT JOIN custom_foods c ON p.food_id = c.id
             WHERE p.user_id = ? AND (p.remaining_g IS NULL OR p.remaining_g > 0)
             ORDER BY p.remaining_g ASC
         ''', (user_id,))
-        
+
         items = []
         for row in cursor.fetchall():
             initial = row[2] or 0
             remaining = row[3] or 0
             usage_pct = round((initial - remaining) / initial * 100, 1) if initial > 0 else 0
-            
+
+            # Calculate shelf life days
+            purchase_date = row[6]
+            expiry_date = row[7]
+            shelf_life_days = None
+            if purchase_date and expiry_date:
+                try:
+                    p_date = datetime.strptime(purchase_date, '%Y-%m-%d')
+                    e_date = datetime.strptime(expiry_date, '%Y-%m-%d')
+                    shelf_life_days = (e_date - p_date).days
+                except:
+                    pass
+
             items.append({
                 "id": row[0],
                 "food_name": row[1],
@@ -347,11 +452,14 @@ def check_remaining(args) -> Dict[str, Any]:
                 "usage_percentage": usage_pct,
                 "quantity_desc": row[4],
                 "location": row[5],
-                "expiry_date": row[6],
+                "purchase_date": purchase_date,
+                "expiry_date": expiry_date,
+                "shelf_life_days": shelf_life_days,
+                "category": row[10] or 'other',
                 "nutrition_per_100g": {
-                    "calories": row[7],
-                    "protein": row[8]
-                } if row[7] else None
+                    "calories": row[8],
+                    "protein": row[9]
+                } if row[8] else None
             })
         
         # Calculate total remaining nutrition
@@ -403,7 +511,16 @@ def main():
     # Remove item
     remove_parser = subparsers.add_parser('remove', help='Remove item')
     remove_parser.add_argument('--item-id', type=int, required=True, help='Item ID')
-    
+
+    # Update item
+    update_parser = subparsers.add_parser('update', help='Update item info')
+    update_parser.add_argument('--item-id', type=int, required=True, help='Item ID')
+    update_parser.add_argument('--purchase', help='New purchase date (YYYY-MM-DD)')
+    update_parser.add_argument('--shelf-life', type=int, help='Shelf life in days')
+    update_parser.add_argument('--location', choices=['fridge', 'freezer', 'pantry', 'counter'],
+                              help='New storage location')
+    update_parser.add_argument('--notes', help='New notes')
+
     # Summary
     subparsers.add_parser('summary', help='Get pantry nutrition summary')
     
@@ -425,6 +542,8 @@ def main():
         result = list_items(args)
     elif args.command == 'remove':
         result = remove_item(args)
+    elif args.command == 'update':
+        result = update_item(args)
     elif args.command == 'summary':
         result = get_pantry_nutrition_summary(args.user)
     elif args.command == 'use':

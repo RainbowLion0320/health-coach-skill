@@ -18,7 +18,7 @@ def check_server_running(port: int = 5000) -> bool:
     """Check if server is already running."""
     import urllib.request
     try:
-        urllib.request.urlopen(f'http://127.0.0.1:{port}/api/summary', timeout=2)
+        urllib.request.urlopen(f'http://localhost:{port}/api/summary', timeout=2)
         return True
     except:
         return False
@@ -29,7 +29,7 @@ def launch_dashboard(username: str, port: int = 5000, open_browser: bool = True)
     
     # Check if already running
     if check_server_running(port):
-        url = f"http://127.0.0.1:{port}"
+        url = f"http://localhost:{port}"
         if open_browser:
             webbrowser.open(url)
         return {
@@ -56,7 +56,7 @@ def launch_dashboard(username: str, port: int = 5000, open_browser: bool = True)
         for _ in range(10):
             time.sleep(1)
             if check_server_running(port):
-                url = f"http://127.0.0.1:{port}"
+                url = f"http://localhost:{port}"
                 if open_browser:
                     webbrowser.open(url)
                 return {
@@ -86,7 +86,7 @@ def launch_dashboard(username: str, port: int = 5000, open_browser: bool = True)
 def main():
     parser = argparse.ArgumentParser(description='Launch Health Coach Dashboard')
     parser.add_argument('--user', required=True, help='Username')
-    parser.add_argument('--port', type=int, default=5000, help='Port (default: 5000)')
+    parser.add_argument('--port', type=int, default=8080, help='Port (default: 8080)')
     parser.add_argument('--no-browser', action='store_true', help='Do not open browser')
     
     args = parser.parse_args()

@@ -142,6 +142,10 @@ See [references/DEVELOPER_GUIDE.md](references/DEVELOPER_GUIDE.md) for:
 - Database schema details
 - Extension guidelines
 
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for version history and breaking changes.
+
 ## Available Scripts
 
 | Script | Purpose |

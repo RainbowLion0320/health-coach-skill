@@ -215,7 +215,11 @@ export OPENAI_BASE_URL="https://api.moonshot.cn/v1"
 
 ### 使用
 ```bash
-# 添加食材
+# 添加食材（过期日期可选，会自动计算）
+python3 scripts/pantry_manager.py --user <name> add \
+  --food "鸡胸肉" --quantity 500
+
+# 手动指定过期日期
 python3 scripts/pantry_manager.py --user <name> add \
   --food "鸡胸肉" --quantity 500 --expiry 2026-04-05
 
@@ -228,6 +232,27 @@ python3 scripts/pantry_manager.py --user <name> remaining
 
 # 查看快过期
 python3 scripts/pantry_manager.py --user <name> list --expiring 3
+```
+
+### 自动过期日期计算
+如果不指定 `--expiry`，系统会自动计算：
+1. **优先**: 查询食物数据库中的默认保质期（如鸡胸肉2天、鸡蛋28天、燕麦365天）
+2. ** fallback**: 按储藏位置使用默认值：
+   - 冰箱: 7天 | 冷冻: 90天 | 干货区: 30天 | 台面: 5天
+
+### 修改食材信息
+```bash
+# 修改生产日期和过期日期
+python3 scripts/pantry_manager.py --user <name> update \
+  --item-id 1 --purchase 2026-03-25 --expiry 2026-04-01
+
+# 修改储藏位置
+python3 scripts/pantry_manager.py --user <name> update \
+  --item-id 1 --location freezer
+
+# 添加备注
+python3 scripts/pantry_manager.py --user <name> update \
+  --item-id 1 --notes "已开封"
 ```
 
 ---
