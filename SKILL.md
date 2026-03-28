@@ -9,13 +9,17 @@ description: |
   - Get personalized diet recommendations based on health goals
   - Analyze nutrition trends and generate reports
   - Identify foods from photos and estimate nutritional content
-  
-  Supports multi-user data isolation, time-series tracking, and extensible food database.
+  - Manage pantry inventory and track food expiration
+  - Get smart recipe recommendations based on available ingredients
+  - Export data and create backups
+
+  Supports multi-user data isolation, time-series tracking, extensible food database,
+  OCR food recognition, and web dashboard visualization.
 ---
 
 # Health Coach Skill
 
-A comprehensive personal health management system for tracking body metrics, logging meals, analyzing nutrition, and receiving intelligent diet recommendations.
+A comprehensive personal health management system for tracking body metrics, logging meals, analyzing nutrition, managing pantry inventory, and receiving intelligent diet recommendations.
 
 ## Quick Start
 
@@ -60,6 +64,58 @@ python3 scripts/meal_logger.py --user <username> log \
 python3 scripts/diet_recommender.py --user <username> recommend --meal-type dinner
 ```
 
+### 6. Launch Web Dashboard
+
+```bash
+python3 scripts/launch_dashboard.py --user <username>
+```
+
+Opens browser at http://127.0.0.1:5000 with visual health data overview.
+
+## Core Features
+
+### 📊 Body Metrics Tracking
+- Weight logging with automatic BMI calculation
+- Body fat percentage tracking
+- 7/30-day trend analysis
+- TDEE (Total Daily Energy Expenditure) calculation
+
+### 🍽️ Meal Logging
+- Natural language food entry: `米饭:150g, 鸡胸肉:100g`
+- Automatic nutrition calculation
+- Daily summary with remaining calories vs TDEE
+- 569 built-in Chinese foods database
+
+### 📷 OCR Food Recognition
+- Scan food packaging with camera
+- Extract nutrition facts automatically
+- Barcode matching for existing products
+- Support for Kimi Vision and macOS Vision engines
+
+### 🥬 Pantry Management
+- Track inventory by storage location (fridge/freezer/dry goods/counter)
+- Expiration date tracking with alerts
+- Automatic quantity deduction when logging meals
+- Category-based organization (protein/vegetable/carb/fruit/dairy)
+
+### 🍳 Smart Recipe Recommendations
+- Generate recipes based on available pantry items
+- Prioritize ingredients nearing expiration
+- Match recipes to nutritional gaps
+- Dynamic threshold adjustment based on inventory levels
+
+### 📈 Web Dashboard (v2)
+- Tabbed interface: Overview / Pantry / Weight History
+- Visual charts for weight and nutrition trends
+- Interactive pantry management
+- One-click recipe generation
+
+### 💾 Data Management
+- JSON/CSV export
+- Automatic database backups (keeps last 10)
+- Easy restore from backup
+- Multi-user data isolation
+
 ## Architecture
 
 See [references/ARCHITECTURE.md](references/ARCHITECTURE.md) for system design and data flow.
@@ -68,19 +124,54 @@ See [references/ARCHITECTURE.md](references/ARCHITECTURE.md) for system design a
 
 See [references/DATABASE_SCHEMA.md](references/DATABASE_SCHEMA.md) for complete ER diagram and table definitions.
 
-## API Reference
+## Feature Guide
 
-See [references/API_REFERENCE.md](references/API_REFERENCE.md) for all script parameters and return formats.
+See [references/FEATURE_GUIDE.md](references/FEATURE_GUIDE.md) for detailed user-facing documentation including:
+- Complete feature descriptions
+- OCR food recognition workflow
+- Pantry management guide
+- Smart recipe recommendations
+- Web dashboard usage
+- Quick command reference
 
-## Food Database
+## Developer Guide
 
-See [references/FOOD_DATABASE.md](references/FOOD_DATABASE.md) for nutrition data sources and extension guide.
+See [references/DEVELOPER_GUIDE.md](references/DEVELOPER_GUIDE.md) for:
+- Complete API reference for all scripts
+- Food database structure
+- Database schema details
+- Extension guidelines
+
+## Available Scripts
+
+| Script | Purpose |
+|--------|---------|
+| `init_db.py` | Initialize user database |
+| `user_profile.py` | Manage user profile and goals |
+| `body_metrics.py` | Log weight and track trends |
+| `meal_logger.py` | Log meals and view daily summary |
+| `diet_recommender.py` | Get meal recommendations |
+| `food_analyzer.py` | Search foods, OCR scan, add custom |
+| `pantry_manager.py` | Manage ingredient inventory |
+| `smart_recipe.py` | Generate recipes from pantry |
+| `launch_dashboard.py` | Start web dashboard |
+| `report_generator.py` | Generate weekly/nutrition reports |
+| `export_data.py` | Export to JSON/CSV |
+| `backup_db.py` | Backup and restore database |
+| `food_ocr.py` | OCR engine wrapper |
+| `food_matcher.py` | Match OCR results to database |
+| `migrate_db.py` | Database migration tool |
 
 ## Data Storage
 
 Each user has an isolated SQLite database stored at:
 ```
 ~/.openclaw/workspace/skills/health-coach/data/<username>.db
+```
+
+Backups are stored in:
+```
+~/.openclaw/workspace/skills/health-coach/data/backups/
 ```
 
 ## Common Workflows
@@ -95,8 +186,49 @@ Each user has an isolated SQLite database stored at:
 2. Check weight trend
 3. Adjust targets if needed with `user_profile.py update`
 
-### Photo Food Recognition
+### Photo Food Recognition Workflow
 1. Save food photo to accessible path
-2. Run: `python3 scripts/food_analyzer.py --user <username> identify --image <path>`
+2. Run: `python3 scripts/food_analyzer.py --user <username> scan --image <path>`
 3. Review identified foods and confirm/edit quantities
 4. Log confirmed foods with `meal_logger.py log`
+
+### Pantry Management Workflow
+1. Add groceries: `pantry_manager.py add --food "鸡胸肉" --quantity 500`
+2. Log meals (auto-deducts from pantry)
+3. Check expiring items: `pantry_manager.py list --expiring 3`
+4. Get recipe ideas: `smart_recipe.py --count 3`
+
+### Web Dashboard Workflow
+1. Launch: `launch_dashboard.py --user <username>`
+2. Browse Overview tab for trends
+3. Manage Pantry tab for inventory
+4. Use smart recipe buttons directly from pantry view
+
+## Configuration
+
+### OCR Engine Setup
+Set environment variables for Kimi Vision (default):
+```bash
+export OPENAI_API_KEY="your-api-key"
+export OPENAI_BASE_URL="https://api.moonshot.cn/v1"
+```
+
+Or use macOS Vision (free, local):
+```bash
+python3 scripts/food_analyzer.py --user <name> scan --image food.jpg --engine macos
+```
+
+## Food Database
+
+Built-in database includes 569 Chinese foods across categories:
+- **Proteins**: 鸡胸肉, 牛肉, 鸡蛋, 豆腐, etc.
+- **Vegetables**: 西兰花, 菠菜, 西红柿, etc.
+- **Carbs**: 米饭, 燕麦, 红薯, etc.
+- **Fruits**: 苹果, 香蕉, 橙子, etc.
+- **Dairy**: 牛奶, 酸奶, 奶酪, etc.
+
+Add custom foods via OCR scan or manual entry.
+
+---
+
+*Last updated: 2026-03-28 (v2.0: Added pantry management, smart recipes, OCR, web dashboard)*
