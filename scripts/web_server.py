@@ -309,14 +309,26 @@ def create_templates():
             background: #f8f9fa;
             border-radius: 8px;
         }
+        .pantry-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+        @media (max-width: 900px) {
+            .pantry-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 600px) {
+            .pantry-grid { grid-template-columns: 1fr; }
+        }
         .pantry-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 12px;
-            border-bottom: 1px solid #eee;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #eee;
         }
-        .pantry-item:last-child { border-bottom: none; }
         .pantry-name { font-weight: 500; }
         .pantry-qty { color: #666; font-size: 0.9em; }
         .expiry-badge {
@@ -593,8 +605,9 @@ def create_templates():
                     if (items.length === 0) continue;
                     html += `<div class="location-section">`;
                     html += `<div class="location-title">${locationNames[location]} (${items.length})</div>`;
+                    html += `<div class="pantry-grid">`;
                     for (const item of items) html += renderItem(item);
-                    html += `</div>`;
+                    html += `</div></div>`;
                 }
             } else {
                 const byCategory = pantryData.by_category;
@@ -612,8 +625,9 @@ def create_templates():
                     if (items.length === 0) continue;
                     html += `<div class="location-section">`;
                     html += `<div class="location-title">${categoryIcons[category]} ${category} (${items.length})</div>`;
+                    html += `<div class="pantry-grid">`;
                     for (const item of items) html += renderItem(item);
-                    html += `</div>`;
+                    html += `</div></div>`;
                 }
             }
 
