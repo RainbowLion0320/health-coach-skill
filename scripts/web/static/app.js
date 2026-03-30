@@ -101,23 +101,32 @@ function getExpiryBadge(item) {
     return { class: 'expiry-ok', text: `${daysLeft} 天后过期` };
 }
 
+// Location name mapping
+const LOCATION_NAMES = {
+    'fridge': '冰箱',
+    'freezer': '冷冻',
+    'pantry': '干货区',
+    'counter': '台面'
+};
+
 // Render pantry item
 function renderItem(item) {
     const expiry = getExpiryBadge(item);
     const percent = Math.round((item.remaining_g / item.initial_g) * 100);
     const progressClass = percent > 50 ? 'pantry-progress-high' : percent > 20 ? 'pantry-progress-medium' : 'pantry-progress-low';
     const unit = item.unit || 'g';
+    const locationName = LOCATION_NAMES[item.location] || item.location || '冰箱';
 
     return `
         <div class="pantry-item">
             <div class="pantry-item-header">
                 <div>
                     <div class="pantry-name">${item.food_name}</div>
-                    <div class="pantry-qty">${item.remaining_g}${unit} / ${item.initial_g}${unit} (${percent}%)</div>
+                    <div class="pantry-qty">${item.remaining_g}${unit} / ${item.initial_g}${unit} (${percent}%) · ${locationName}</div>
                 </div>
                 <div>
                     <span class="expiry-badge ${expiry.class}">${expiry.text}</span>
-                    <button class="action-btn" onclick="openEditModal(${item.id}, '${item.food_name}', ${item.remaining_g}, '${unit}', ${item.shelf_life_days || 7}, '${item.purchase_date || ''}', '${item.expiry_date || ''}', '${item.location || '冰箱'}')">编辑</button>
+                    <button class="action-btn" onclick="openEditModal(${item.id}, '${item.food_name}', ${item.remaining_g}, '${unit}', ${item.shelf_life_days || 7}, '${item.purchase_date || ''}', '${item.expiry_date || ''}', '${locationName}')">编辑</button>
                 </div>
             </div>
             <div class="pantry-progress">
