@@ -56,9 +56,9 @@ def search_food_nutrition(conn: sqlite3.Connection, food_name: str) -> Dict[str,
     """Search for food nutrition in database."""
     cursor = conn.cursor()
     
-    # Try exact match first
+    # Try exact match first - use all columns to match db_schema
     cursor.execute('''
-        SELECT name, calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g, fiber_per_100g, sodium_per_100g
+        SELECT *
         FROM custom_foods
         WHERE name = ? OR name LIKE ?
         LIMIT 1
@@ -74,7 +74,15 @@ def search_food_nutrition(conn: sqlite3.Connection, food_name: str) -> Dict[str,
             "carbs_per_100g": row[FC['carbs_per_100g']],
             "fat_per_100g": row[FC['fat_per_100g']],
             "fiber_per_100g": row[FC['fiber_per_100g']] or 0,
-            "sodium_per_100g": row[FC['sodium_per_100g']] or 0
+            "sodium_per_100g": row[FC['sodium_per_100g']] or 0,
+            "calcium_mg": row[FC['calcium_mg']] or 0,
+            "trans_fat_g": row[FC['trans_fat_g']] or 0,
+            "saturated_fat_g": row[FC['saturated_fat_g']] or 0,
+            "sugar_g": row[FC['sugar_g']] or 0,
+            "vitamin_a_ug": row[FC['vitamin_a_ug']] or 0,
+            "vitamin_c_mg": row[FC['vitamin_c_mg']] or 0,
+            "iron_mg": row[FC['iron_mg']] or 0,
+            "zinc_mg": row[FC['zinc_mg']] or 0
         }
     
     # Return default/unknown
@@ -86,6 +94,14 @@ def search_food_nutrition(conn: sqlite3.Connection, food_name: str) -> Dict[str,
         "fat_per_100g": 0,
         "fiber_per_100g": 0,
         "sodium_per_100g": 0,
+        "calcium_mg": 0,
+        "trans_fat_g": 0,
+        "saturated_fat_g": 0,
+        "sugar_g": 0,
+        "vitamin_a_ug": 0,
+        "vitamin_c_mg": 0,
+        "iron_mg": 0,
+        "zinc_mg": 0,
         "unknown": True
     }
 
@@ -99,7 +115,15 @@ def calculate_nutrition(food_nutrition: Dict[str, Any], quantity_g: float) -> Di
         "carbs_g": round(food_nutrition["carbs_per_100g"] * ratio, 2),
         "fat_g": round(food_nutrition["fat_per_100g"] * ratio, 2),
         "fiber_g": round(food_nutrition.get("fiber_per_100g", 0) * ratio, 2),
-        "sodium_mg": round(food_nutrition.get("sodium_per_100g", 0) * ratio, 2)
+        "sodium_mg": round(food_nutrition.get("sodium_per_100g", 0) * ratio, 2),
+        "calcium_mg": round(food_nutrition.get("calcium_mg", 0) * ratio, 2),
+        "trans_fat_g": round(food_nutrition.get("trans_fat_g", 0) * ratio, 2),
+        "saturated_fat_g": round(food_nutrition.get("saturated_fat_g", 0) * ratio, 2),
+        "sugar_g": round(food_nutrition.get("sugar_g", 0) * ratio, 2),
+        "vitamin_a_ug": round(food_nutrition.get("vitamin_a_ug", 0) * ratio, 2),
+        "vitamin_c_mg": round(food_nutrition.get("vitamin_c_mg", 0) * ratio, 2),
+        "iron_mg": round(food_nutrition.get("iron_mg", 0) * ratio, 2),
+        "zinc_mg": round(food_nutrition.get("zinc_mg", 0) * ratio, 2)
     }
 
 
