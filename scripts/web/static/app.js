@@ -122,7 +122,7 @@ function renderItem(item) {
             <div class="pantry-item-header">
                 <div>
                     <div class="pantry-name">${item.food_name}</div>
-                    <div class="pantry-qty">${item.remaining_g}${unit} / ${item.initial_g}${unit} (${percent}%) · ${locationName}</div>
+                    <div class="pantry-qty">${item.remaining_g}${unit} / ${item.initial_g}${unit} (${percent}%)</div>
                 </div>
                 <div>
                     <span class="expiry-badge ${expiry.class}">${expiry.text}</span>
