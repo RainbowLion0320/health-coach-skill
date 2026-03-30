@@ -63,6 +63,7 @@ CREATE TABLE IF NOT EXISTS meals (
     total_carbs_g REAL DEFAULT 0,
     total_fat_g REAL DEFAULT 0,
     total_fiber_g REAL DEFAULT 0,
+    total_sodium_mg REAL DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
@@ -81,6 +82,7 @@ CREATE TABLE IF NOT EXISTS food_items (
     carbs_g REAL DEFAULT 0,
     fat_g REAL DEFAULT 0,
     fiber_g REAL DEFAULT 0,
+    sodium_mg REAL DEFAULT 0,
     source TEXT DEFAULT 'database',
     FOREIGN KEY (meal_id) REFERENCES meals(id) ON DELETE CASCADE
 );

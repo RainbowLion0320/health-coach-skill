@@ -19,11 +19,14 @@ function showTab(tabName) {
 // Load overview data
 fetch('/api/summary').then(r => r.json()).then(data => {
     const daily = data.daily?.data || {};
+    const sodium = daily.totals?.sodium_mg || 0;
+    const sodiumWarning = sodium > 2000 ? '⚠️' : sodium > 1500 ? '⚡' : '';
     document.getElementById('daily-summary').innerHTML = `
         <div class="stat"><span>热量</span><span class="stat-value">${Math.round(daily.totals?.calories || 0)}/${Math.round(daily.tdee || 2000)} kcal</span></div>
         <div class="stat"><span>蛋白质</span><span class="stat-value">${Math.round(daily.totals?.protein_g || 0)}g</span></div>
         <div class="stat"><span>碳水</span><span class="stat-value">${Math.round(daily.totals?.carbs_g || 0)}g</span></div>
         <div class="stat"><span>脂肪</span><span class="stat-value">${Math.round(daily.totals?.fat_g || 0)}g</span></div>
+        <div class="stat"><span>钠 ${sodiumWarning}</span><span class="stat-value">${Math.round(sodium)}mg</span></div>
     `;
 });
 

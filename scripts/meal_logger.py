@@ -58,7 +58,7 @@ def search_food_nutrition(conn: sqlite3.Connection, food_name: str) -> Dict[str,
     
     # Try exact match first
     cursor.execute('''
-        SELECT name, calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g, fiber_per_100g
+        SELECT name, calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g, fiber_per_100g, sodium_per_100g
         FROM custom_foods
         WHERE name = ? OR name LIKE ?
         LIMIT 1
@@ -73,7 +73,8 @@ def search_food_nutrition(conn: sqlite3.Connection, food_name: str) -> Dict[str,
             "protein_per_100g": row[FC['protein_per_100g']],
             "carbs_per_100g": row[FC['carbs_per_100g']],
             "fat_per_100g": row[FC['fat_per_100g']],
-            "fiber_per_100g": row[FC['fiber_per_100g']] or 0
+            "fiber_per_100g": row[FC['fiber_per_100g']] or 0,
+            "sodium_per_100g": row[FC['sodium_per_100g']] or 0
         }
     
     # Return default/unknown
@@ -84,6 +85,7 @@ def search_food_nutrition(conn: sqlite3.Connection, food_name: str) -> Dict[str,
         "carbs_per_100g": 0,
         "fat_per_100g": 0,
         "fiber_per_100g": 0,
+        "sodium_per_100g": 0,
         "unknown": True
     }
 
@@ -96,7 +98,8 @@ def calculate_nutrition(food_nutrition: Dict[str, Any], quantity_g: float) -> Di
         "protein_g": round(food_nutrition["protein_per_100g"] * ratio, 2),
         "carbs_g": round(food_nutrition["carbs_per_100g"] * ratio, 2),
         "fat_g": round(food_nutrition["fat_per_100g"] * ratio, 2),
-        "fiber_g": round(food_nutrition.get("fiber_per_100g", 0) * ratio, 2)
+        "fiber_g": round(food_nutrition.get("fiber_per_100g", 0) * ratio, 2),
+        "sodium_mg": round(food_nutrition.get("sodium_per_100g", 0) * ratio, 2)
     }
 
 
@@ -139,15 +142,15 @@ def log_meal(args) -> Dict[str, Any]:
         
         # Insert meal record
         cursor.execute('''
-            INSERT INTO meals (user_id, meal_type, eaten_at, notes, total_calories, total_protein_g, total_carbs_g, total_fat_g, total_fiber_g)
-            VALUES (?, ?, ?, ?, 0, 0, 0, 0, 0)
+            INSERT INTO meals (user_id, meal_type, eaten_at, notes, total_calories, total_protein_g, total_carbs_g, total_fat_g, total_fiber_g, total_sodium_mg)
+            VALUES (?, ?, ?, ?, 0, 0, 0, 0, 0, 0)
         ''', (user_id, args.meal_type, eaten_at, args.notes))
         
         meal_id = cursor.lastrowid
         
         # Process each food item
         food_items = []
-        totals = {"calories": 0, "protein_g": 0, "carbs_g": 0, "fat_g": 0, "fiber_g": 0}
+        totals = {"calories": 0, "protein_g": 0, "carbs_g": 0, "fat_g": 0, "fiber_g": 0, "sodium_mg": 0}
         unknown_foods = []
         
         for food_name, quantity_g in foods:
@@ -159,8 +162,8 @@ def log_meal(args) -> Dict[str, Any]:
             
             # Insert food item
             cursor.execute('''
-                INSERT INTO food_items (meal_id, food_name, quantity_g, calories, protein_g, carbs_g, fat_g, fiber_g, source)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO food_items (meal_id, food_name, quantity_g, calories, protein_g, carbs_g, fat_g, fiber_g, sodium_mg, source)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 meal_id,
                 nutrition_info["name"],
@@ -170,6 +173,7 @@ def log_meal(args) -> Dict[str, Any]:
                 calculated["carbs_g"],
                 calculated["fat_g"],
                 calculated["fiber_g"],
+                calculated["sodium_mg"],
                 "database" if not nutrition_info.get("unknown") else "unknown"
             ))
             
@@ -190,7 +194,8 @@ def log_meal(args) -> Dict[str, Any]:
                 total_protein_g = ?,
                 total_carbs_g = ?,
                 total_fat_g = ?,
-                total_fiber_g = ?
+                total_fiber_g = ?,
+                total_sodium_mg = ?
             WHERE id = ?
         ''', (
             round(totals["calories"], 2),
@@ -198,6 +203,7 @@ def log_meal(args) -> Dict[str, Any]:
             round(totals["carbs_g"], 2),
             round(totals["fat_g"], 2),
             round(totals["fiber_g"], 2),
+            round(totals["sodium_mg"], 2),
             meal_id
         ))
         
@@ -323,14 +329,14 @@ def daily_summary(args) -> Dict[str, Any]:
         date = args.date or datetime.now().strftime('%Y-%m-%d')
         
         cursor.execute('''
-            SELECT meal_type, total_calories, total_protein_g, total_carbs_g, total_fat_g
+            SELECT meal_type, total_calories, total_protein_g, total_carbs_g, total_fat_g, total_sodium_mg
             FROM meals
             WHERE user_id = ? AND DATE(eaten_at) = ?
         ''', (user_id, date))
         
         rows = cursor.fetchall()
         
-        totals = {"calories": 0, "protein_g": 0, "carbs_g": 0, "fat_g": 0}
+        totals = {"calories": 0, "protein_g": 0, "carbs_g": 0, "fat_g": 0, "sodium_mg": 0}
         by_meal = {}
         
         for row in rows:
@@ -339,12 +345,14 @@ def daily_summary(args) -> Dict[str, Any]:
                 "calories": row[1],
                 "protein_g": row[2],
                 "carbs_g": row[3],
-                "fat_g": row[4]
+                "fat_g": row[4],
+                "sodium_mg": row[5]
             }
             totals["calories"] += (row[1] or 0)
             totals["protein_g"] += (row[2] or 0)
             totals["carbs_g"] += (row[3] or 0)
             totals["fat_g"] += (row[4] or 0)
+            totals["sodium_mg"] += (row[5] or 0)
         
         remaining = (tdee or 2000) - totals["calories"]
         
