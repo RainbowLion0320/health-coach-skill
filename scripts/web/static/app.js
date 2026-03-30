@@ -3,6 +3,7 @@
 let currentItemId = null;
 let currentItemName = null;
 let currentItemRemaining = 0;
+let currentItemUnit = 'g';
 let currentShelfLife = 7;
 let pantryViewMode = 'location';
 let pantryData = null;
@@ -186,8 +187,10 @@ function openEditModal(id, name, remaining, unit, shelfLife, purchase, expiry, l
     currentItemId = id;
     currentItemName = name;
     currentItemRemaining = remaining;
+    currentItemUnit = unit || 'g';
     currentShelfLife = shelfLife;
-    document.getElementById('editModalItemName').textContent = `${name} (剩余 ${remaining}${unit || 'g'})`;
+    document.getElementById('editModalItemName').textContent = `${name} (剩余 ${remaining}${currentItemUnit})`;
+    document.getElementById('editUseAmount').placeholder = `使用重量 (${currentItemUnit})`;
     document.getElementById('editUseAmount').value = '';
     document.getElementById('editPurchase').value = purchase || '';
     document.getElementById('editShelfLife').value = shelfLife || 7;
@@ -210,12 +213,13 @@ function closeModal(id) {
 
 function confirmUseFromEdit() {
     const amount = parseFloat(document.getElementById('editUseAmount').value);
+    const unit = currentItemUnit || 'g';
     if (!amount || amount <= 0) {
-        alert('请输入有效的使用重量');
+        alert('请输入有效的使用量');
         return;
     }
     if (amount > currentItemRemaining) {
-        alert(`使用重量不能超过剩余量 (${currentItemRemaining}g)`);
+        alert(`使用量不能超过剩余量 (${currentItemRemaining}${unit})`);
         return;
     }
     fetch('/api/pantry/use', {
@@ -226,9 +230,9 @@ function confirmUseFromEdit() {
     .then(r => r.json())
     .then(data => {
         if (data.status === 'success') {
-            showSuccess(`已记录：使用 ${amount}g ${currentItemName}`);
+            showSuccess(`已记录：使用 ${amount}${unit} ${currentItemName}`);
             currentItemRemaining -= amount;
-            document.getElementById('editModalItemName').textContent = `${currentItemName} (剩余 ${currentItemRemaining}g)`;
+            document.getElementById('editModalItemName').textContent = `${currentItemName} (剩余 ${currentItemRemaining}${unit})`;
             document.getElementById('editUseAmount').value = '';
             setTimeout(loadPantry, 500);
         } else {
