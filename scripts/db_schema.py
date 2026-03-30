@@ -41,32 +41,28 @@ CUSTOM_FOODS_COLUMNS = {
     'user_id': 1,
     'name': 2,
     'category': 3,
-    'calories_per_100g': 4,
-    'protein_per_100g': 5,
-    'carbs_per_100g': 6,
-    'fat_per_100g': 7,
-    'fiber_per_100g': 8,
-    'sodium_per_100g': 9,
-    'barcode': 10,
-    'brand': 11,
-    'source': 12,
-    'storage_method': 13,
-    'default_shelf_life_days': 14,
-    'created_at': 15,
-    'updated_at': 16,
-    'calcium_mg': 17,
-    'trans_fat_g': 18,
-    'saturated_fat_g': 19,
-    'sugar_g': 20,
-    'vitamin_a_ug': 21,
-    'vitamin_c_mg': 22,
-    'iron_mg': 23,
-    'zinc_mg': 24,
-    'source': 20,
-    'storage_method': 21,
-    'default_shelf_life_days': 22,
-    'created_at': 15,
-    'updated_at': 16,
+    'unit': 4,
+    'calories_per_100g': 5,
+    'protein_per_100g': 6,
+    'carbs_per_100g': 7,
+    'fat_per_100g': 8,
+    'fiber_per_100g': 9,
+    'sodium_per_100g': 10,
+    'barcode': 11,
+    'brand': 12,
+    'source': 13,
+    'storage_method': 14,
+    'default_shelf_life_days': 15,
+    'created_at': 16,
+    'updated_at': 17,
+    'calcium_mg': 18,
+    'trans_fat_g': 19,
+    'saturated_fat_g': 20,
+    'sugar_g': 21,
+    'vitamin_a_ug': 22,
+    'vitamin_c_mg': 23,
+    'iron_mg': 24,
+    'zinc_mg': 25,
 }
 
 # ============================================================================
@@ -82,6 +78,16 @@ MEALS_COLUMNS = {
     'total_protein_g': 6,
     'total_carbs_g': 7,
     'total_fat_g': 8,
+    'total_fiber_g': 9,
+    'total_sodium_mg': 10,
+    'total_calcium_mg': 11,
+    'total_trans_fat_g': 12,
+    'total_saturated_fat_g': 13,
+    'total_sugar_g': 14,
+    'total_vitamin_a_ug': 15,
+    'total_vitamin_c_mg': 16,
+    'total_iron_mg': 17,
+    'total_zinc_mg': 18,
 }
 
 # ============================================================================
@@ -92,11 +98,23 @@ FOOD_ITEMS_COLUMNS = {
     'meal_id': 1,
     'food_id': 2,
     'food_name': 3,
-    'quantity_g': 4,
-    'calories': 5,
-    'protein_g': 6,
-    'carbs_g': 7,
-    'fat_g': 8,
+    'quantity_input': 4,
+    'unit': 5,
+    'quantity_g': 6,
+    'calories': 7,
+    'protein_g': 8,
+    'carbs_g': 9,
+    'fat_g': 10,
+    'fiber_g': 11,
+    'sodium_mg': 12,
+    'calcium_mg': 13,
+    'trans_fat_g': 14,
+    'saturated_fat_g': 15,
+    'sugar_g': 16,
+    'vitamin_a_ug': 17,
+    'vitamin_c_mg': 18,
+    'iron_mg': 19,
+    'zinc_mg': 20,
 }
 
 # ============================================================================
@@ -132,59 +150,14 @@ PANTRY_USAGE_COLUMNS = {
     'used_at': 7,
 }
 
-
-def get_col(table: str, column: str) -> int:
-    """Get column index for a table."""
-    tables = {
-        'users': USERS_COLUMNS,
-        'body_metrics': BODY_METRICS_COLUMNS,
-        'custom_foods': CUSTOM_FOODS_COLUMNS,
-        'meals': MEALS_COLUMNS,
-        'food_items': FOOD_ITEMS_COLUMNS,
-        'pantry': PANTRY_COLUMNS,
-        'pantry_usage': PANTRY_USAGE_COLUMNS,
-    }
-    if table not in tables:
-        raise ValueError(f"Unknown table: {table}")
-    if column not in tables[table]:
-        raise ValueError(f"Unknown column {column} in table {table}")
-    return tables[table][column]
-
-
 # ============================================================================
 # Default Values
 # ============================================================================
 DEFAULTS = {
-    'user_height_cm': 170.0,
     'location_shelf_life': {
-        'fridge': 7,
-        'freezer': 90,
-        'pantry': 30,
-        'counter': 5,
-    },
-    'macro_split': {
-        'protein_pct': 30,
-        'carbs_pct': 40,
-        'fat_pct': 30,
-    },
-}
-
-# ============================================================================
-# Activity Multipliers for TDEE Calculation
-# ============================================================================
-ACTIVITY_MULTIPLIERS = {
-    'sedentary': 1.2,
-    'light': 1.375,
-    'moderate': 1.55,
-    'active': 1.725,
-    'very_active': 1.9,
-}
-
-# ============================================================================
-# Goal Adjustments
-# ============================================================================
-GOAL_ADJUSTMENTS = {
-    'lose': -500,  # Calorie deficit
-    'maintain': 0,
-    'gain': 300,   # Calorie surplus
+        'fridge': 7,      # 冰箱：7天
+        'freezer': 90,    # 冷冻：3个月
+        'pantry': 180,    # 干货区：6个月
+        'counter': 3,     # 台面：3天
+    }
 }

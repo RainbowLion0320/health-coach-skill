@@ -215,20 +215,21 @@ User-defined or imported food items.
 | user_id | INTEGER | FOREIGN KEY users(id) ON DELETE CASCADE | 用户ID |
 | name | TEXT | NOT NULL | 食物名称 |
 | category | TEXT | | 分类 |
-| calories_per_100g | REAL | NOT NULL | 每100克热量 |
-| protein_per_100g | REAL | DEFAULT 0 | 每100克蛋白质 |
-| carbs_per_100g | REAL | DEFAULT 0 | 每100克碳水 |
-| fat_per_100g | REAL | DEFAULT 0 | 每100克脂肪 |
-| fiber_per_100g | REAL | DEFAULT 0 | 每100克纤维 |
-| sodium_per_100g | REAL | DEFAULT 0 | 每100克钠（毫克） |
-| calcium_mg | REAL | DEFAULT 0 | 每100克钙（毫克） |
-| trans_fat_g | REAL | DEFAULT 0 | 每100克反式脂肪（克） |
-| saturated_fat_g | REAL | DEFAULT 0 | 每100克饱和脂肪（克） |
-| sugar_g | REAL | DEFAULT 0 | 每100克糖（克） |
-| vitamin_a_ug | REAL | DEFAULT 0 | 每100克维生素A（微克） |
-| vitamin_c_mg | REAL | DEFAULT 0 | 每100克维生素C（毫克） |
-| iron_mg | REAL | DEFAULT 0 | 每100克铁（毫克） |
-| zinc_mg | REAL | DEFAULT 0 | 每100克锌（毫克） |
+| unit | TEXT | DEFAULT 'g' | 计量单位（'g'克或'ml'毫升） |
+| calories_per_100g | REAL | NOT NULL | 每100克/毫升热量 |
+| protein_per_100g | REAL | DEFAULT 0 | 每100克/毫升蛋白质 |
+| carbs_per_100g | REAL | DEFAULT 0 | 每100克/毫升碳水 |
+| fat_per_100g | REAL | DEFAULT 0 | 每100克/毫升脂肪 |
+| fiber_per_100g | REAL | DEFAULT 0 | 每100克/毫升纤维 |
+| sodium_per_100g | REAL | DEFAULT 0 | 每100克/毫升钠（毫克） |
+| calcium_mg | REAL | DEFAULT 0 | 每100克/毫升钙（毫克） |
+| trans_fat_g | REAL | DEFAULT 0 | 每100克/毫升反式脂肪（克） |
+| saturated_fat_g | REAL | DEFAULT 0 | 每100克/毫升饱和脂肪（克） |
+| sugar_g | REAL | DEFAULT 0 | 每100克/毫升糖（克） |
+| vitamin_a_ug | REAL | DEFAULT 0 | 每100克/毫升维生素A（微克） |
+| vitamin_c_mg | REAL | DEFAULT 0 | 每100克/毫升维生素C（毫克） |
+| iron_mg | REAL | DEFAULT 0 | 每100克/毫升铁（毫克） |
+| zinc_mg | REAL | DEFAULT 0 | 每100克/毫升锌（毫克） |
 | barcode | TEXT | | 条形码 |
 | brand | TEXT | | 品牌 |
 | source | TEXT | DEFAULT 'custom' | 数据来源 |
