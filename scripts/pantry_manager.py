@@ -414,7 +414,7 @@ def check_remaining(args) -> Dict[str, Any]:
         cursor.execute('''
             SELECT p.id, p.food_name, p.quantity_g, p.remaining_g,
                    p.quantity_desc, p.location, p.purchase_date, p.expiry_date,
-                   c.calories_per_100g, c.protein_per_100g, c.category
+                   c.calories_per_100g, c.protein_per_100g, c.category, c.unit
             FROM pantry p
             LEFT JOIN custom_foods c ON p.food_id = c.id
             WHERE p.user_id = ? AND (p.remaining_g IS NULL OR p.remaining_g > 0)
@@ -452,6 +452,7 @@ def check_remaining(args) -> Dict[str, Any]:
                 "expiry_date": expiry_date,
                 "shelf_life_days": shelf_life_days,
                 "category": row[10] or 'other',  # from custom_foods join
+                "unit": row[11] or 'g',  # from custom_foods join
                 "nutrition_per_100g": {
                     "calories": row[8],  # from custom_foods join
                     "protein": row[9]    # from custom_foods join

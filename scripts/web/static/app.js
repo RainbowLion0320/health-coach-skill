@@ -105,17 +105,18 @@ function renderItem(item) {
     const expiry = getExpiryBadge(item);
     const percent = Math.round((item.remaining_g / item.initial_g) * 100);
     const progressClass = percent > 50 ? 'pantry-progress-high' : percent > 20 ? 'pantry-progress-medium' : 'pantry-progress-low';
+    const unit = item.unit || 'g';
 
     return `
         <div class="pantry-item">
             <div class="pantry-item-header">
                 <div>
                     <div class="pantry-name">${item.food_name}</div>
-                    <div class="pantry-qty">${item.remaining_g}g / ${item.initial_g}g (${percent}%)</div>
+                    <div class="pantry-qty">${item.remaining_g}${unit} / ${item.initial_g}${unit} (${percent}%)</div>
                 </div>
                 <div>
                     <span class="expiry-badge ${expiry.class}">${expiry.text}</span>
-                    <button class="action-btn" onclick="openEditModal(${item.id}, '${item.food_name}', ${item.remaining_g}, ${item.shelf_life_days || 7}, '${item.purchase_date || ''}', '${item.expiry_date || ''}', '${item.location || '冰箱'}')">编辑</button>
+                    <button class="action-btn" onclick="openEditModal(${item.id}, '${item.food_name}', ${item.remaining_g}, '${unit}', ${item.shelf_life_days || 7}, '${item.purchase_date || ''}', '${item.expiry_date || ''}', '${item.location || '冰箱'}')">编辑</button>
                 </div>
             </div>
             <div class="pantry-progress">
@@ -181,12 +182,12 @@ function calculateExpiry() {
 }
 
 // Modal functions
-function openEditModal(id, name, remaining, shelfLife, purchase, expiry, location) {
+function openEditModal(id, name, remaining, unit, shelfLife, purchase, expiry, location) {
     currentItemId = id;
     currentItemName = name;
     currentItemRemaining = remaining;
     currentShelfLife = shelfLife;
-    document.getElementById('editModalItemName').textContent = `${name} (剩余 ${remaining}g)`;
+    document.getElementById('editModalItemName').textContent = `${name} (剩余 ${remaining}${unit || 'g'})`;
     document.getElementById('editUseAmount').value = '';
     document.getElementById('editPurchase').value = purchase || '';
     document.getElementById('editShelfLife').value = shelfLife || 7;
