@@ -95,3 +95,10 @@ def register_routes(app, get_user_func):
             args.extend(['--expiry', data.get('expiry')])
         result = run_script(get_user(), 'pantry_manager.py', 'add', *args)
         return jsonify(result)
+
+    @app.route('/api/pantry/delete', methods=['POST'])
+    def api_pantry_delete():
+        data = request.json
+        result = run_script(get_user(), 'pantry_manager.py', 'remove', 
+                           '--item-id', str(data.get('item_id')))
+        return jsonify(result)

@@ -580,6 +580,34 @@ header p {
   color: var(--text-primary);
 }
 
+/* Delete section */
+.delete-section {
+  margin-top: var(--space-xl);
+  padding-top: var(--space-lg);
+  border-top: 1px solid var(--accent-border);
+  text-align: center;
+}
+
+.delete-btn {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--accent-border);
+  padding: var(--space-md) var(--space-xl);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all var(--transition-base);
+  width: 100%;
+}
+
+.delete-btn:hover {
+  background: rgba(248, 113, 113, 0.1);
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
 /* Success message */
 .success-msg {
   display: none;

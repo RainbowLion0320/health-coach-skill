@@ -388,6 +388,33 @@ function confirmEdit() {
     });
 }
 
+function confirmDelete() {
+    if (!currentItemId) {
+        alert('未选择食材');
+        return;
+    }
+    
+    if (!confirm(`确定要删除 "${currentItemName}" 吗？此操作不可恢复。`)) {
+        return;
+    }
+    
+    fetch('/api/pantry/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ item_id: currentItemId })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'success') {
+            showSuccess(`已删除：${currentItemName}`);
+            closeModal('editModal');
+            setTimeout(loadPantry, 500);
+        } else {
+            alert('删除失败：' + (data.message || data.error));
+        }
+    });
+}
+
 function confirmAdd() {
     const food = document.getElementById('addFoodName').value.trim();
     const quantity = parseFloat(document.getElementById('addQuantity').value);
