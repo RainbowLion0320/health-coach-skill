@@ -542,6 +542,57 @@ header p {
   box-shadow: 0 0 0 3px var(--accent-subtle);
 }
 
+/* Use section - 记录使用 */
+.use-section {
+  margin: var(--space-xl) 0;
+  padding: var(--space-lg);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--accent-border);
+}
+
+.use-section label {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-bottom: var(--space-md);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.use-inputs {
+  display: flex;
+  gap: var(--space-md);
+  align-items: stretch;
+}
+
+.use-inputs input {
+  flex: 1;
+  margin-bottom: 0;
+  background: var(--bg-card);
+}
+
+.use-inputs button {
+  padding: var(--space-md) var(--space-xl);
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+  color: var(--bg-primary);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 600;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+  box-shadow: var(--shadow-gold);
+}
+
+.use-inputs button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(212, 175, 55, 0.4);
+}
+
 .modal-buttons {
   display: flex;
   gap: var(--space-md);
