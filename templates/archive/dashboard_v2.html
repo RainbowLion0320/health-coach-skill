@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Health Coach - {{ user }}</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+        header h1 { font-size: 2em; margin-bottom: 10px; }
+        
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+        .tab {
+            padding: 10px 20px;
+            border: none;
+            background: #f0f0f0;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+        .tab:hover { background: #e0e0e0; }
+        .tab.active {
+            background: #667eea;
+            color: white;
+        }
+
+        /* Pantry filter tabs */
+        .pantry-filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 0 5px;
+        }
+        .filter-tab {
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s;
+        }
+        .filter-tab:hover {
+            background: #f0f0f0;
+        }
+        .filter-tab.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        /* Tab content */
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+        .card h2 {
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            color: #667eea;
+        }
+        .stat {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .stat:last-child { border-bottom: none; }
+        .stat-value { font-weight: bold; color: #667eea; }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 20px;
+        }
+        .loading { text-align: center; padding: 40px; color: #999; }
+        
+        /* Pantry specific */
+        .location-section {
+            margin-bottom: 25px;
+        }
+        .location-title {
+            font-size: 1.1em;
+            font-weight: 600;
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .pantry-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+        @media (max-width: 900px) {
+            .pantry-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 600px) {
+            .pantry-grid { grid-template-columns: 1fr; }
+        }
+        .pantry-item {
+            display: flex;
+            flex-direction: column;
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #eee;
+            gap: 8px;
+        }
+        .pantry-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .pantry-name { font-weight: 500; }
+        .pantry-qty { color: #666; font-size: 0.85em; }
+        .pantry-progress {
+            width: 100%;
+            height: 6px;
+            background: #e0e0e0;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .pantry-progress-bar {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.3s;
+        }
+        .pantry-progress-high { background: #4caf50; }
+        .pantry-progress-medium { background: #ff9800; }
+        .pantry-progress-low { background: #f44336; }
+        .expiry-badge {
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 500;
+        }
+        .expiry-urgent { background: #fee; color: #c33; }
+        .expiry-soon { background: #ffeaa7; color: #d63031; }
+        .expiry-ok { background: #e8f5e9; color: #2e7d32; }
+        .action-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85em;
+            margin-left: 10px;
+        }
+        .action-btn:hover { background: #5568d3; }
+        .add-btn {
+            background: #4caf50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            margin-bottom: 20px;
+        }
+        .add-btn:hover { background: #45a049; }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+        }
+        .modal h3 { margin-bottom: 20px; }
+        .modal input, .modal select {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .modal-buttons button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .modal-buttons .confirm { background: #667eea; color: white; }
+        .modal-buttons .cancel { background: #f0f0f0; }
+        .success-msg {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏃 Health Coach</h1>
+            <p>用户: {{ user }}</p>
+        </header>
+        
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('overview')">📊 概览</button>
+            <button class="tab" onclick="showTab('pantry')">🥬 食材管理</button>
+            <button class="tab" onclick="showTab('weight')">⚖️ 体重记录</button>
+        </div>
+        
+        <!-- Overview Tab -->
+        <div id="overview" class="tab-content active">
+            <div class="grid">
+                <div class="card">
+                    <h2>📊 今日概览</h2>
+                    <div id="daily-summary"><div class="loading">加载中...</div></div>
+                </div>
+                <div class="card">
+                    <h2>⚖️ 体重趋势</h2>
+                    <div class="chart-container"><canvas id="weightChart"></canvas></div>
+                </div>
+                <div class="card">
+                    <h2>🍽️ 营养趋势</h2>
+                    <div class="chart-container"><canvas id="nutritionChart"></canvas></div>
+                </div>
+                <div class="card">
+                    <h2>👤 身体数据</h2>
+                    <div id="profile"><div class="loading">加载中...</div></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Pantry Tab -->
+        <div id="pantry" class="tab-content">
+            <button class="add-btn" onclick="openAddModal()">➕ 添加食材</button>
+            <!-- Pantry Filter Tabs -->
+            <div class="pantry-filters">
+                <button class="filter-tab active" onclick="showPantryView('location')">📍 按储藏位置</button>
+                <button class="filter-tab" onclick="showPantryView('category')">🏷️ 按食材分类</button>
+            </div>
+            <div id="pantry-content"><div class="loading">加载中...</div></div>
+            <div id="success-msg" class="success-msg"></div>
+        </div>
+        
+        <!-- Weight Tab -->
+        <div id="weight" class="tab-content">
+            <div class="card">
+                <h2>体重记录功能开发中...</h2>
+                <p>请使用命令行记录体重</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modals -->
+    <div id="addModal" class="modal">
+        <div class="modal-content">
+            <h3>➕ 添加食材</h3>
+            <input type="text" id="addFoodName" placeholder="食材名称">
+            <input type="number" id="addQuantity" placeholder="重量 (g)" min="1">
+            <input type="date" id="addExpiry">
+            <select id="addLocation">
+                <option value="auto">🤖 自动检测储藏方式</option>
+                <option value="冰箱">❄️ 冰箱</option>
+                <option value="冷冻">🧊 冷冻</option>
+                <option value="干货区">📦 干货区</option>
+                <option value="台面">🌡️ 台面</option>
+            </select>
+            <div class="modal-buttons">
+                <button class="confirm" onclick="confirmAdd()">添加</button>
+                <button class="cancel" onclick="closeModal('addModal')">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <h3>✏️ 编辑食材</h3>
+            <p id="editModalItemName"></p>
+
+            <div style="background:#f8f9fa; padding:15px; border-radius:8px; margin:15px 0;">
+                <label style="display:block; margin-bottom:5px; color:#666; font-size:0.9em;">🍳 记录使用</label>
+                <div style="display:flex; gap:10px;">
+                    <input type="number" id="editUseAmount" placeholder="使用重量 (g)" min="1" style="flex:1; margin:0;">
+                    <button class="confirm" onclick="confirmUseFromEdit()" style="flex:0 0 auto; padding:10px 20px;">使用</button>
+                </div>
+                <input type="text" id="editUseNotes" placeholder="使用备注（可选）" style="margin-top:8px;">
+            </div>
+
+            <hr style="border:none; border-top:1px solid #eee; margin:20px 0;">
+
+            <label style="display:block; margin:10px 0 5px; color:#666; font-size:0.9em;">📅 生产日期</label>
+            <input type="date" id="editPurchase">
+            <label style="display:block; margin:10px 0 5px; color:#666; font-size:0.9em;">⏱️ 保质期（天）</label>
+            <input type="number" id="editShelfLife" placeholder="保质期天数" min="1" style="width:100%;">
+            <div style="background:#e8f5e9; padding:10px; border-radius:6px; margin:10px 0; font-size:0.85em; color:#2e7d32;">
+                📅 过期日期将自动计算: <span id="editCalculatedExpiry">-</span>
+            </div>
+            <label style="display:block; margin:10px 0 5px; color:#666; font-size:0.9em;">📍 储藏位置</label>
+            <select id="editLocation">
+                <option value="冰箱">❄️ 冰箱</option>
+                <option value="冷冻">🧊 冷冻</option>
+                <option value="干货区">📦 干货区</option>
+                <option value="台面">🌡️ 台面</option>
+            </select>
+            <label style="display:block; margin:10px 0 5px; color:#666; font-size:0.9em;">📝 备注</label>
+            <input type="text" id="editNotes" placeholder="备注（可选）">
+            <div class="modal-buttons">
+                <button class="confirm" onclick="confirmEdit()">保存修改</button>
+                <button class="cancel" onclick="closeModal('editModal')">取消</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let currentItemId = null;
+        let currentItemName = null;
+        
+        // Tab switching
+        function showTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+            
+            if (tabName === 'pantry') loadPantry();
+        }
+        
+        // Load overview data
+        fetch('/api/summary').then(r => r.json()).then(data => {
+            // Daily summary
+            const daily = data.daily?.data || {};
+            document.getElementById('daily-summary').innerHTML = `
+                <div class="stat"><span>热量</span><span class="stat-value">${Math.round(daily.totals?.calories || 0)}/${Math.round(daily.tdee || 2000)} kcal</span></div>
+                <div class="stat"><span>蛋白质</span><span class="stat-value">${Math.round(daily.totals?.protein_g || 0)}g</span></div>
+                <div class="stat"><span>碳水</span><span class="stat-value">${Math.round(daily.totals?.carbs_g || 0)}g</span></div>
+                <div class="stat"><span>脂肪</span><span class="stat-value">${Math.round(daily.totals?.fat_g || 0)}g</span></div>
+            `;
+        });
+        
+        // Load profile
+        fetch('/api/profile').then(r => r.json()).then(data => {
+            const p = data.data || {};
+            document.getElementById('profile').innerHTML = `
+                <div class="stat"><span>身高</span><span class="stat-value">${p.height_cm} cm</span></div>
+                <div class="stat"><span>BMR</span><span class="stat-value">${Math.round(p.bmr || 0)} kcal</span></div>
+                <div class="stat"><span>TDEE</span><span class="stat-value">${Math.round(p.tdee || 0)} kcal</span></div>
+                <div class="stat"><span>目标</span><span class="stat-value">${p.goal_type === 'lose' ? '减脂' : p.goal_type === 'gain' ? '增肌' : '维持'}</span></div>
+            `;
+        });
+        
+        // Pantry view state
+        let pantryViewMode = 'location';
+        let pantryData = null;
+
+        // Switch pantry view
+        function showPantryView(mode) {
+            pantryViewMode = mode;
+            document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            renderPantry();
+        }
+
+        // Render pantry items
+        function renderPantry() {
+            if (!pantryData) return;
+
+            const today = new Date();
+
+            function getExpiryBadge(item) {
+                if (!item.expiry_date) return { class: 'expiry-ok', text: '新鲜' };
+                const expiry = new Date(item.expiry_date);
+                const daysLeft = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
+
+                if (daysLeft <= 1) return { class: 'expiry-urgent', text: '今天过期' };
+                if (daysLeft <= 3) return { class: 'expiry-soon', text: `${daysLeft}天后过期` };
+                return { class: 'expiry-ok', text: `${daysLeft}天后过期` };
+            }
+
+            function renderItem(item) {
+                const expiry = getExpiryBadge(item);
+                const percent = Math.round((item.remaining_g / item.initial_g) * 100);
+                const progressClass = percent > 50 ? 'pantry-progress-high' : percent > 20 ? 'pantry-progress-medium' : 'pantry-progress-low';
+
+                return `
+                    <div class="pantry-item">
+                        <div class="pantry-item-header">
+                            <div>
+                                <div class="pantry-name">${item.food_name}</div>
+                                <div class="pantry-qty">${item.remaining_g}g / ${item.initial_g}g (${percent}%)</div>
+                            </div>
+                            <div>
+                                <span class="expiry-badge ${expiry.class}">${expiry.text}</span>
+                                <button class="action-btn" onclick="openEditModal(${item.id}, '${item.food_name}', ${item.remaining_g}, ${item.shelf_life_days || 7}, '${item.purchase_date || ''}', '${item.expiry_date || ''}', '${item.location || '冰箱'}')">编辑</button>
+                            </div>
+                        </div>
+                        <div class="pantry-progress">
+                            <div class="pantry-progress-bar ${progressClass}" style="width: ${percent}%"></div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            let html = '';
+
+            if (pantryViewMode === 'location') {
+                const grouped = pantryData.grouped;
+                const locationNames = {
+                    '冰箱': '❄️ 冰箱',
+                    '冷冻': '🧊 冷冻',
+                    '干货区': '📦 干货区',
+                    '台面': '🌡️ 台面'
+                };
+
+                for (const [location, items] of Object.entries(grouped)) {
+                    if (items.length === 0) continue;
+                    html += `<div class="location-section">`;
+                    html += `<div class="location-title">${locationNames[location]} (${items.length})</div>`;
+                    html += `<div class="pantry-grid">`;
+                    for (const item of items) html += renderItem(item);
+                    html += `</div></div>`;
+                }
+            } else {
+                const byCategory = pantryData.by_category;
+                const categoryIcons = {
+                    '蛋白质': '🥩',
+                    '蔬菜': '🥬',
+                    '碳水': '🍚',
+                    '水果': '🍎',
+                    '乳制品': '🥛',
+                    '脂肪': '🥑',
+                    '其他': '📦'
+                };
+
+                for (const [category, items] of Object.entries(byCategory)) {
+                    if (items.length === 0) continue;
+                    html += `<div class="location-section">`;
+                    html += `<div class="location-title">${categoryIcons[category]} ${category} (${items.length})</div>`;
+                    html += `<div class="pantry-grid">`;
+                    for (const item of items) html += renderItem(item);
+                    html += `</div></div>`;
+                }
+            }
+
+            document.getElementById('pantry-content').innerHTML = html;
+        }
+
+        // Load pantry
+        function loadPantry() {
+            fetch('/api/pantry').then(r => r.json()).then(data => {
+                if (data.status !== 'success') {
+                    document.getElementById('pantry-content').innerHTML = '<p>加载失败</p>';
+                    return;
+                }
+                pantryData = data.data;
+                renderPantry();
+            });
+        }
+        
+        // Modal functions
+        function openUseModal(id, name, maxAmount) {
+            currentItemId = id;
+            currentItemName = name;
+            document.getElementById('useModalItemName').textContent = `${name} (最多 ${maxAmount}g)`;
+            document.getElementById('useAmount').value = '';
+            document.getElementById('useNotes').value = '';
+            document.getElementById('useModal').classList.add('active');
+        }
+        
+        function openAddModal() {
+            document.getElementById('addFoodName').value = '';
+            document.getElementById('addQuantity').value = '';
+            document.getElementById('addExpiry').value = '';
+            document.getElementById('addLocation').value = 'auto';
+            document.getElementById('addModal').classList.add('active');
+        }
+
+        let currentItemRemaining = 0;
+        let currentShelfLife = 7;
+
+        function calculateExpiry() {
+            const purchase = document.getElementById('editPurchase').value;
+            const shelfLife = parseInt(document.getElementById('editShelfLife').value);
+            const expirySpan = document.getElementById('editCalculatedExpiry');
+
+            if (purchase && shelfLife > 0) {
+                const pDate = new Date(purchase);
+                const eDate = new Date(pDate.getTime() + shelfLife * 24 * 60 * 60 * 1000);
+                expirySpan.textContent = eDate.toLocaleDateString('zh-CN');
+            } else {
+                expirySpan.textContent = '-';
+            }
+        }
+
+        function openEditModal(id, name, remaining, shelfLife, purchase, expiry, location) {
+            currentItemId = id;
+            currentItemName = name;
+            currentItemRemaining = remaining;
+            currentShelfLife = shelfLife;
+            document.getElementById('editModalItemName').textContent = `${name} (剩余 ${remaining}g)`;
+            document.getElementById('editUseAmount').value = '';
+            document.getElementById('editUseNotes').value = '';
+            document.getElementById('editPurchase').value = purchase || '';
+            document.getElementById('editShelfLife').value = shelfLife || 7;
+            document.getElementById('editLocation').value = location || '冰箱';
+            document.getElementById('editNotes').value = '';
+            calculateExpiry();
+            document.getElementById('editModal').classList.add('active');
+        }
+
+        // Auto-calculate expiry when inputs change
+        document.getElementById('editPurchase').addEventListener('change', calculateExpiry);
+        document.getElementById('editShelfLife').addEventListener('input', calculateExpiry);
+
+        function confirmUseFromEdit() {
+            const amount = parseFloat(document.getElementById('editUseAmount').value);
+            const notes = document.getElementById('editUseNotes').value;
+
+            if (!amount || amount <= 0) {
+                alert('请输入有效的使用重量');
+                return;
+            }
+            if (amount > currentItemRemaining) {
+                alert(`使用重量不能超过剩余量 (${currentItemRemaining}g)`);
+                return;
+            }
+
+            fetch('/api/pantry/use', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ item_id: currentItemId, amount: amount, notes: notes })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showSuccess(`已记录：使用 ${amount}g ${currentItemName}`);
+                    currentItemRemaining -= amount;
+                    document.getElementById('editModalItemName').textContent = `${currentItemName} (剩余 ${currentItemRemaining}g)`;
+                    document.getElementById('editUseAmount').value = '';
+                    setTimeout(loadPantry, 500);
+                } else {
+                    alert('失败：' + (data.message || data.error));
+                }
+            });
+        }
+
+        function confirmEdit() {
+            const purchase = document.getElementById('editPurchase').value;
+            const shelfLife = parseInt(document.getElementById('editShelfLife').value);
+            const location = document.getElementById('editLocation').value;
+            const notes = document.getElementById('editNotes').value;
+
+            const body = { item_id: currentItemId };
+            if (purchase) body.purchase = purchase;
+            if (shelfLife > 0) body.shelf_life = shelfLife;
+            if (location) body.location = location;
+            if (notes) body.notes = notes;
+
+            fetch('/api/pantry/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showSuccess(`已更新：${currentItemName}`);
+                    closeModal('editModal');
+                    setTimeout(loadPantry, 500);
+                } else {
+                    alert('失败：' + (data.message || data.error));
+                }
+            });
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+        
+        function confirmAdd() {
+            const food = document.getElementById('addFoodName').value.trim();
+            const quantity = parseFloat(document.getElementById('addQuantity').value);
+            const expiry = document.getElementById('addExpiry').value;
+            const location = document.getElementById('addLocation').value;
+
+            if (!food || !quantity) {
+                alert('请填写完整信息');
+                return;
+            }
+
+            // Build request body - only include expiry if set
+            const body = { food: food, quantity: quantity, location: location };
+            if (expiry) body.expiry = expiry;
+
+            fetch('/api/pantry/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showSuccess(`已添加：${food}`);
+                    closeModal('addModal');
+                    setTimeout(loadPantry, 500);
+                } else {
+                    alert('失败：' + (data.message || data.error));
+                }
+            });
+        }
+        
+        function showSuccess(msg) {
+            const el = document.getElementById('success-msg');
+            el.textContent = msg;
+            el.style.display = 'block';
+            setTimeout(() => el.style.display = 'none', 3000);
+        }
+        
+        window.onclick = function(e) {
+            if (e.target.classList.contains('modal')) {
+                e.target.classList.remove('active');
+            }
+        };
+    </script>
+</body>
+</html>
