@@ -218,6 +218,17 @@ const LOCATION_NAMES = {
     'counter': '台面'
 };
 
+// Category mapping
+const CATEGORY_MAP = {
+    'protein': '蛋白质',
+    'vegetable': '蔬菜',
+    'carb': '碳水',
+    'fruit': '水果',
+    'dairy': '乳制品',
+    'fat': '脂肪',
+    'other': '其他'
+};
+
 // Render pantry item
 function renderItem(item) {
     const expiry = getExpiryBadge(item);
@@ -225,6 +236,7 @@ function renderItem(item) {
     const progressClass = percent > 50 ? 'pantry-progress-high' : percent > 20 ? 'pantry-progress-medium' : 'pantry-progress-low';
     const unit = item.unit || 'g';
     const locationName = LOCATION_NAMES[item.location] || item.location || '冰箱';
+    const category = item.category || 'other';
     // Escape food name for use in onclick attribute
     const escapedFoodName = item.food_name.replace(/'/g, "\\'").replace(/"/g, '\\"');
 
@@ -237,7 +249,7 @@ function renderItem(item) {
                 </div>
                 <div class="pantry-actions">
                     <span class="expiry-badge ${expiry.class}">${expiry.text}</span>
-                    <button class="action-btn" onclick="openEditModal(${item.id}, '${escapedFoodName}', ${item.remaining_g}, '${unit}', ${item.shelf_life_days || 7}, '${item.purchase_date || ''}', '${item.expiry_date || ''}', '${locationName}')">编辑</button>
+                    <button class="action-btn" onclick="openEditModal(${item.id}, '${escapedFoodName}', ${item.remaining_g}, '${unit}', ${item.shelf_life_days || 7}, '${item.purchase_date || ''}', '${item.expiry_date || ''}', '${locationName}', '${category}')">编辑</button>
                 </div>
             </div>
             <div class="pantry-progress">
@@ -303,7 +315,7 @@ function calculateExpiry() {
 }
 
 // Modal functions
-function openEditModal(id, name, remaining, unit, shelfLife, purchase, expiry, location) {
+function openEditModal(id, name, remaining, unit, shelfLife, purchase, expiry, location, category) {
     currentItemId = id;
     currentItemName = name;
     currentItemRemaining = remaining;
@@ -315,6 +327,7 @@ function openEditModal(id, name, remaining, unit, shelfLife, purchase, expiry, l
     document.getElementById('editPurchase').value = purchase || '';
     document.getElementById('editShelfLife').value = shelfLife || 7;
     document.getElementById('editLocation').value = location || '冰箱';
+    document.getElementById('editCategory').value = category || 'other';
     calculateExpiry();
     document.getElementById('editModal').classList.add('active');
 }
