@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Health Coach 单元测试运行器
+NutriCoach 单元测试运行器
 运行所有测试并生成报告
 """
 
@@ -29,7 +29,7 @@ from test_database import (
 def run_all_tests():
     """Run all test suites and generate report."""
     print("=" * 70)
-    print("Health Coach 单元测试")
+    print("NutriCoach 单元测试")
     print(f"运行时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("=" * 70)
     print()

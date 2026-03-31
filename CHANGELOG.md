@@ -53,7 +53,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **多用户隔离**: SQLite数据库隔离
 - **数据导出**: JSON/CSV导出功能
 
-[Unreleased]: https://github.com/RainbowLion0320/health-coach-skill/compare/v2.0.0...HEAD
-[2.0.0]: https://github.com/RainbowLion0320/health-coach-skill/compare/v1.1.0...v2.0.0
-[1.1.0]: https://github.com/RainbowLion0320/health-coach-skill/compare/v1.0.0...v1.1.0
-[1.0.0]: https://github.com/RainbowLion0320/health-coach-skill/releases/tag/v1.0.0
+[Unreleased]: https://github.com/RainbowLion0320/nutricoach-skill/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/RainbowLion0320/nutricoach-skill/compare/v1.1.0...v2.0.0
+[1.1.0]: https://github.com/RainbowLion0320/nutricoach-skill/compare/v1.0.0...v1.1.0
+[1.0.0]: https://github.com/RainbowLion0320/nutricoach-skill/releases/tag/v1.0.0

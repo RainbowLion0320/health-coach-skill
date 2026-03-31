@@ -1,6 +1,6 @@
 # Screenshots
 
-This directory contains screenshots of the Health Coach Web UI for documentation and ClawHub listing.
+This directory contains screenshots of the NutriCoach Web UI for documentation and ClawHub listing.
 
 ## Screenshots to add
 

@@ -1,4 +1,4 @@
-# Health Coach Architecture
+# NutriCoach Architecture
 
 ## System Overview
 

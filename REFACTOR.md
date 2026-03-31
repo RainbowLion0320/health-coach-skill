@@ -1,4 +1,4 @@
-# Health Coach Skill 代码重构分析
+# NutriCoach Skill 代码重构分析
 
 ## 当前问题
 

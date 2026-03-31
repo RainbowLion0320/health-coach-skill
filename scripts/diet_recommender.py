@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Diet recommendation engine for Health Coach.
+Diet recommendation engine for NutriCoach.
 """
 
 import argparse

@@ -1,4 +1,4 @@
-// Health Coach Dashboard JavaScript
+// NutriCoach Dashboard JavaScript
 
 let currentItemId = null;
 let currentItemName = null;

@@ -1,4 +1,4 @@
-# Health Coach 功能手册
+# NutriCoach 功能手册
 
 > 面向用户的完整功能说明，非开发文档。
 

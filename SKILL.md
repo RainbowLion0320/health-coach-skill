@@ -1,5 +1,5 @@
 ---
-name: health-coach
+name: nutricoach
 description: |
   Personal health data management and intelligent diet recommendation system.
   Use when users need to:
@@ -17,7 +17,7 @@ description: |
   OCR food recognition, and web dashboard visualization.
 ---
 
-# Health Coach Skill
+# NutriCoach Skill
 
 A comprehensive personal health management system for tracking body metrics, logging meals, analyzing nutrition, managing pantry inventory, and receiving intelligent diet recommendations.
 

@@ -1,4 +1,4 @@
-# Health Coach - 奢华精致风格设计
+# NutriCoach - 奢华精致风格设计
 
 ## 设计方向
 

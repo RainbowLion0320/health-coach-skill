@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Food analysis and nutrition lookup for Health Coach.
+Food analysis and nutrition lookup for NutriCoach.
 """
 
 import argparse

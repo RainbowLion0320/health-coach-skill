@@ -1,5 +1,5 @@
 """
-Web Dashboard Module for Health Coach
+Web Dashboard Module for NutriCoach
 """
 
 from .config import TEMPLATE_VERSION, SKILL_DIR, LOCATION_MAP, REVERSE_LOCATION_MAP
