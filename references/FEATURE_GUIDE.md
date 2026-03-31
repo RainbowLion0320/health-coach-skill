@@ -460,7 +460,7 @@ python3 scripts/report_generator.py --user <name> nutrition --days 30
 
 ## 数据存储
 
-- **位置**：`~/.openclaw/workspace/skills/health-coach/data/<username>.db`
+- **位置**：`~/.openclaw/workspace/skills/nutricoach/data/<username>.db`
 - **格式**：SQLite
 - **导出**：支持 JSON/CSV
 - **备份**：自动保留最近10份

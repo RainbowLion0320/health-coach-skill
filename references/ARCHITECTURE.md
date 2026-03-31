@@ -29,7 +29,7 @@
 ┌─────────────────────────────────────────────────────────────┐
 │                    Data Storage Layer                        │
 │         (User-isolated SQLite databases)                     │
-│    ~/.openclaw/workspace/skills/health-coach/data/*.db       │
+│    ~/.openclaw/workspace/skills/nutricoach/data/*.db       │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -135,7 +135,7 @@ Benefits:
 
 ## Configuration
 
-Global config: `config/health-coach.yaml`
+Global config: `config/nutricoach.yaml`
 
 ```yaml
 # Nutrition calculation

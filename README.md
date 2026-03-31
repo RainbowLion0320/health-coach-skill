@@ -88,7 +88,7 @@ python3 scripts/report_generator.py --user robert nutrition --days 7
 ## 技术架构
 
 ```
-health-coach/
+nutricoach/
 ├── SKILL.md                    # Skill 入口文档（OpenClaw 使用）
 ├── README.md                   # 本文件（GitHub 展示）
 ├── requirements.txt            # Python 依赖

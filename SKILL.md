@@ -170,12 +170,12 @@ See [CHANGELOG.md](CHANGELOG.md) for version history and breaking changes.
 
 Each user has an isolated SQLite database stored at:
 ```
-~/.openclaw/workspace/skills/health-coach/data/<username>.db
+~/.openclaw/workspace/skills/nutricoach/data/<username>.db
 ```
 
 Backups are stored in:
 ```
-~/.openclaw/workspace/skills/health-coach/data/backups/
+~/.openclaw/workspace/skills/nutricoach/data/backups/
 ```
 
 ## Common Workflows

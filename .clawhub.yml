@@ -1,7 +1,7 @@
 # ClawHub Skill Configuration
 # https://clawhub.ai
 
-name: health-coach
+name: nutricoach
 version: 2.0.0
 description: |
   Personal health data management and intelligent diet recommendation system.
