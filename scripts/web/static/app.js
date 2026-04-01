@@ -7,6 +7,65 @@ let currentItemUnit = 'g';
 let currentShelfLife = 7;
 let pantryViewMode = 'location';
 let pantryData = null;
+let currentLang = localStorage.getItem('nutricoach_lang') || 'zh-CN';
+
+// Translation data (embedded for simplicity)
+const i18n = {
+    "zh-CN": {
+        "nav_overview": "概览", "nav_pantry": "食材", "nav_exercise": "运动", "nav_water": "饮水", "nav_sleep": "睡眠",
+        "weight_trend": "体重趋势 (最近30天)", "nutrition_trend": "营养趋势 (最近30天)",
+        "today_summary": "今日概览", "calories": "热量", "protein": "蛋白质", "carbs": "碳水", "fat": "脂肪",
+        "exercise_title": "运动记录", "exercise_log": "记录运动", "exercise_type": "运动类型", "duration": "时长(分钟)",
+        "water_title": "饮水记录", "water_log": "记录饮水", "daily_goal": "目标", "amount_ml": "ml",
+        "sleep_title": "睡眠记录", "sleep_log": "记录睡眠", "hours": "时长(小时)", "quality": "质量",
+        "no_data": "暂无数据", "save": "保存", "loading": "加载中..."
+    },
+    "en-US": {
+        "nav_overview": "Overview", "nav_pantry": "Pantry", "nav_exercise": "Exercise", "nav_water": "Water", "nav_sleep": "Sleep",
+        "weight_trend": "Weight Trend (30 days)", "nutrition_trend": "Nutrition Trend (30 days)",
+        "today_summary": "Today", "calories": "Calories", "protein": "Protein", "carbs": "Carbs", "fat": "Fat",
+        "exercise_title": "Exercise Log", "exercise_log": "Log Exercise", "exercise_type": "Type", "duration": "Minutes",
+        "water_title": "Water Intake", "water_log": "Log Water", "daily_goal": "Goal", "amount_ml": "ml",
+        "sleep_title": "Sleep Log", "sleep_log": "Log Sleep", "hours": "Hours", "quality": "Quality",
+        "no_data": "No data", "save": "Save", "loading": "Loading..."
+    }
+};
+
+function t(key) {
+    return i18n[currentLang]?.[key] || key;
+}
+
+function toggleLanguage() {
+    currentLang = currentLang === 'zh-CN' ? 'en-US' : 'zh-CN';
+    localStorage.setItem('nutricoach_lang', currentLang);
+    
+    document.getElementById('html-root').lang = currentLang;
+    document.getElementById('lang-btn').textContent = currentLang === 'zh-CN' ? 'EN' : '中';
+    
+    // Update all translatable elements
+    document.querySelectorAll('[data-i18]').forEach(el => {
+        const key = el.getAttribute('data-i18');
+        el.textContent = t(key);
+    });
+    
+    // Update tab labels
+    const tabLabels = {
+        'overview': 'nav_overview', 'pantry': 'nav_pantry', 
+        'exercise': 'nav_exercise', 'water': 'nav_water', 'sleep': 'nav_sleep'
+    };
+    document.querySelectorAll('.tab').forEach(tab => {
+        const tabName = tab.getAttribute('onclick')?.match(/'(.+)'/)?.[1];
+        if (tabName && tabLabels[tabName]) {
+            tab.setAttribute('data-i18', tabLabels[tabName]);
+            tab.textContent = t(tabLabels[tabName]);
+        }
+    });
+}
+
+// Initialize language
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('lang-btn').textContent = currentLang === 'zh-CN' ? 'EN' : '中';
+});
 
 // Tab switching
 function showTab(tabName) {
@@ -14,7 +73,11 @@ function showTab(tabName) {
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
     event.target.classList.add('active');
     document.getElementById(tabName).classList.add('active');
+    
     if (tabName === 'pantry') loadPantry();
+    else if (tabName === 'exercise') loadExercise();
+    else if (tabName === 'water') loadWater();
+    else if (tabName === 'sleep') loadSleep();
 }
 
 // Load overview data
@@ -479,3 +542,132 @@ window.onclick = function(e) {
         e.target.classList.remove('active');
     }
 };
+
+// ========== Exercise Tab ==========
+function loadExercise() {
+    fetch('/api/exercise-history?days=7')
+        .then(r => r.json())
+        .then(data => {
+            const exercises = data.data?.exercises || [];
+            const summary = data.data?.summary || {};
+            
+            if (exercises.length === 0) {
+                document.getElementById('exercise-content').innerHTML = 
+                    '<p style="text-align:center;color:#999;padding:40px;">' + t('no_data') + '</p>';
+                return;
+            }
+            
+            let html = '<div class="summary-stats">';
+            html += '<div class="stat"><span>总时长</span><span class="stat-value">' + (summary.total_duration_minutes || 0) + ' min</span></div>';
+            html += '<div class="stat"><span>消耗热量</span><span class="stat-value">' + (summary.total_calories || 0) + ' kcal</span></div>';
+            html += '<div class="stat"><span>运动次数</span><span class="stat-value">' + (summary.session_count || 0) + '</span></div>';
+            html += '</div><ul class="item-list">';
+            
+            exercises.forEach(ex => {
+                html += '<li class="item-card"><span>' + ex.exercise_type + '</span>';
+                html += '<span>' + ex.duration_minutes + ' min, ' + ex.calories_burned + ' cal</span></li>';
+            });
+            html += '</ul>';
+            
+            document.getElementById('exercise-content').innerHTML = html;
+        });
+}
+
+function showExerciseModal() {
+    const type = prompt('运动类型 (如: running, cycling, swimming):');
+    if (!type) return;
+    const duration = parseInt(prompt('时长(分钟):'));
+    if (!duration) return;
+    const calories = parseInt(prompt('消耗卡路里:') || '0');
+    
+    fetch('/api/exercise-log', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ exercise_type: type, duration_minutes: duration, calories_burned: calories })
+    }).then(r => r.json()).then(data => {
+        if (data.status === 'success') showSuccess('运动已记录');
+        loadExercise();
+    });
+}
+
+// ========== Water Tab ==========
+function loadWater() {
+    fetch('/api/water-history?days=1')
+        .then(r => r.json())
+        .then(data => {
+            const daily = data.data?.daily || [];
+            const summary = data.data?.summary || {};
+            
+            let html = '<div class="water-today">';
+            html += '<div class="water-progress"><div class="water-bar" style="width:' + 
+                Math.min((summary.total_ml / 2000) * 100, 100) + '%"></div></div>';
+            html += '<p>今日: <strong>' + (summary.total_ml || 0) + '</strong> / 2000 ml</p>';
+            html += '</div>';
+            
+            if (daily.length === 0) {
+                html += '<p style="text-align:center;color:#999;">' + t('no_data') + '</p>';
+            }
+            
+            document.getElementById('water-content').innerHTML = html;
+        });
+}
+
+function logWater(amount) {
+    fetch('/api/water-log', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ amount_ml: amount })
+    }).then(r => r.json()).then(data => {
+        if (data.status === 'success') showSuccess('已记录 ' + amount + 'ml');
+        loadWater();
+    });
+}
+
+// ========== Sleep Tab ==========
+function loadSleep() {
+    fetch('/api/sleep-history?days=7')
+        .then(r => r.json())
+        .then(data => {
+            const records = data.data?.records || [];
+            const summary = data.data?.summary || {};
+            
+            if (records.length === 0) {
+                document.getElementById('sleep-content').innerHTML = 
+                    '<p style="text-align:center;color:#999;padding:40px;">' + t('no_data') + '</p>';
+                return;
+            }
+            
+            let html = '<div class="summary-stats">';
+            html += '<div class="stat"><span>平均时长</span><span class="stat-value">' + (summary.avg_hours || 0) + ' h</span></div>';
+            html += '</div><ul class="item-list">';
+            
+            records.forEach(s => {
+                const q = s.sleep_quality === 'excellent' ? '⭐' : s.sleep_quality === 'good' ? '👍' : '😐';
+                html += '<li class="item-card"><span>' + s.sleep_hours + 'h ' + q + '</span>';
+                html += '<span>' + new Date(s.sleep_start).toLocaleDateString() + '</span></li>';
+            });
+            html += '</ul>';
+            
+            document.getElementById('sleep-content').innerHTML = html;
+        });
+}
+
+function showSleepModal() {
+    const hours = parseFloat(prompt('睡眠时长(小时):'));
+    if (!hours) return;
+    const quality = prompt('睡眠质量 (poor/fair/good/excellent):');
+    if (!quality) return;
+    
+    const now = new Date();
+    const start = new Date(now.getTime() - hours * 3600000).toISOString();
+    const end = now.toISOString();
+    
+    fetch('/api/sleep-log', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ sleep_hours: hours, sleep_quality: quality, sleep_start: start, sleep_end: end })
+    }).then(r => r.json()).then(data => {
+        if (data.status === 'success') showSuccess('睡眠已记录');
+        loadSleep();
+    });
+}

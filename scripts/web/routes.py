@@ -102,3 +102,50 @@ def register_routes(app, get_user_func):
         result = run_script(get_user(), 'pantry_manager.py', 'remove', 
                            '--item-id', str(data.get('item_id')))
         return jsonify(result)
+
+    # ========== Exercise API ==========
+    @app.route('/api/exercise-history')
+    def api_exercise_history():
+        days = request.args.get('days', '7')
+        result = run_script(get_user(), 'exercise_logger.py', 'history', '--days', days)
+        return jsonify(result)
+
+    @app.route('/api/exercise-log', methods=['POST'])
+    def api_exercise_log():
+        data = request.json
+        result = run_script(get_user(), 'exercise_logger.py', 'log',
+                           '--type', data.get('exercise_type'),
+                           '--duration', str(data.get('duration_minutes')),
+                           '--calories', str(data.get('calories_burned', 0)),
+                           '--intensity', data.get('intensity', 'moderate'))
+        return jsonify(result)
+
+    # ========== Water API ==========
+    @app.route('/api/water-history')
+    def api_water_history():
+        days = request.args.get('days', '1')
+        result = run_script(get_user(), 'water_logger.py', 'history', '--days', days)
+        return jsonify(result)
+
+    @app.route('/api/water-log', methods=['POST'])
+    def api_water_log():
+        data = request.json
+        result = run_script(get_user(), 'water_logger.py', 'log', str(data.get('amount_ml')))
+        return jsonify(result)
+
+    # ========== Sleep API ==========
+    @app.route('/api/sleep-history')
+    def api_sleep_history():
+        days = request.args.get('days', '7')
+        result = run_script(get_user(), 'sleep_logger.py', 'history', '--days', days)
+        return jsonify(result)
+
+    @app.route('/api/sleep-log', methods=['POST'])
+    def api_sleep_log():
+        data = request.json
+        result = run_script(get_user(), 'sleep_logger.py', 'log',
+                           '--hours', str(data.get('sleep_hours')),
+                           '--quality', data.get('sleep_quality'),
+                           '--start', data.get('sleep_start'),
+                           '--end', data.get('sleep_end'))
+        return jsonify(result)

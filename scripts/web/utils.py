@@ -13,9 +13,26 @@ from .config import SKILL_DIR, FOOD_STORAGE_DEFAULTS
 def run_script(user: str, script_name: str, *args) -> Dict[str, Any]:
     """Run a skill script and return parsed JSON."""
     script_path = os.path.join(SKILL_DIR, 'scripts', script_name)
-    cmd = ['python3', script_path, '--user', user] + list(args)
+    
+    # Check if script accepts --user argument
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+        help_result = subprocess.run(['python3', script_path, '--help'], 
+                                    capture_output=True, text=True, timeout=5)
+        uses_user_arg = '--user' in help_result.stdout
+    except:
+        uses_user_arg = False
+    
+    # Use environment variable or --user argument
+    env = os.environ.copy()
+    env['NUTRICOACH_USER'] = user
+    
+    if uses_user_arg:
+        cmd = ['python3', script_path, '--user', user] + list(args)
+    else:
+        cmd = ['python3', script_path] + list(args)
+    
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30, env=env)
         if result.returncode == 0:
             return json.loads(result.stdout)
         else:

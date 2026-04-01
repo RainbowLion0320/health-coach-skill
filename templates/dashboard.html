@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" id="html-root">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,13 +13,17 @@
             <div class="header-content">
                 <h1>NutriCoach</h1>
                 <span class="user-badge">{{ user }}</span>
+                <button class="lang-toggle" onclick="toggleLanguage()" id="lang-btn">EN</button>
             </div>
         </header>
 
         <!-- Tabs -->
         <div class="tabs">
-            <button class="tab active" onclick="showTab('overview')">概览</button>
-            <button class="tab" onclick="showTab('pantry')">食材</button>
+            <button class="tab active" onclick="showTab('overview')" data-i18="nav_overview">概览</button>
+            <button class="tab" onclick="showTab('pantry')" data-i18="nav_pantry">食材</button>
+            <button class="tab" onclick="showTab('exercise')" data-i18="nav_exercise">运动</button>
+            <button class="tab" onclick="showTab('water')" data-i18="nav_water">饮水</button>
+            <button class="tab" onclick="showTab('sleep')" data-i18="nav_sleep">睡眠</button>
         </div>
 
         <!-- Overview Tab -->
@@ -57,6 +61,37 @@
             </div>
             <div id="pantry-content"><div class="loading">加载中...</div></div>
             <div id="success-msg" class="success-msg"></div>
+        </div>
+
+        <!-- Exercise Tab -->
+        <div id="exercise" class="tab-content">
+            <div class="card">
+                <h2>运动记录</h2>
+                <button class="add-btn" onclick="showExerciseModal()">记录运动</button>
+                <div id="exercise-content"><div class="loading">加载中...</div></div>
+            </div>
+        </div>
+
+        <!-- Water Tab -->
+        <div id="water" class="tab-content">
+            <div class="card">
+                <h2>饮水记录</h2>
+                <div class="water-goal">
+                    <span>每日目标: <strong id="water-goal">2000</strong> ml</span>
+                </div>
+                <button class="add-btn" onclick="logWater(250)">+250ml</button>
+                <button class="add-btn" onclick="logWater(500)">+500ml</button>
+                <div id="water-content"><div class="loading">加载中...</div></div>
+            </div>
+        </div>
+
+        <!-- Sleep Tab -->
+        <div id="sleep" class="tab-content">
+            <div class="card">
+                <h2>睡眠记录</h2>
+                <button class="add-btn" onclick="showSleepModal()">记录睡眠</button>
+                <div id="sleep-content"><div class="loading">加载中...</div></div>
+            </div>
         </div>
 
     </div>
