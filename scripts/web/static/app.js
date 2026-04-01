@@ -75,7 +75,7 @@ fetch('/api/weight-history?days=30').then(r => r.json()).then(data => {
 });
 
 // Load nutrition history and render chart
-fetch('/api/nutrition-history?days=7').then(r => r.json()).then(data => {
+fetch('/api/nutrition-history?days=30').then(r => r.json()).then(data => {
     if (data.status === 'success' && data.data?.meals?.length > 0) {
         const meals = data.data.meals;
         
