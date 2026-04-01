@@ -24,7 +24,7 @@
 | Linux | ❌ 未测试 | 理论可行，但未验证 |
 | Windows | ❌ 不支持 | 暂未适配 |
 
-> **注意**：OCR 功能中的 macOS Vision 引擎仅在 macOS 上可用。其他平台可使用 Kimi Vision 引擎（需配置 API Key）。
+> **注意**：OCR 功能支持三种方式：AI 助手直接识别（推荐，零配置）、macOS Vision（本地免费）、云端 OCR（可选，需 API key）。
 
 ## 功能模块
 
@@ -36,7 +36,7 @@
 | 食材数据库 | ✅ | 内置 569 种中餐食物，支持扩展 |
 | 饮食推荐 | ✅ | 基于目标和剩余预算的推荐 |
 | 数据分析 | ✅ | 周报、营养分析、趋势统计 |
-| OCR 拍照识别 | ✅ | 双引擎（Kimi + macOS），条形码优先匹配 |
+| OCR 拍照识别 | ✅ | 三层识别（助手/本地/云端），条形码优先匹配 |
 | Pantry 食材管理 | ✅ | 库存追踪、过期提醒、分类管理 |
 | 智能菜谱推荐 | ✅ | 基于库存和营养缺口的菜谱生成 |
 | Web 评估面板 | ✅ | 可视化仪表盘，支持页签导航 |
@@ -179,21 +179,32 @@ python3 scripts/launch_dashboard.py --user robert
 
 ## OCR 食品识别
 
-```bash
-# 静默扫描（自动处理）
-python3 scripts/food_analyzer.py --user robert scan --image chips.jpg
+### 方式一：AI 助手识别（推荐）
+直接向 AI 助手发送食品包装图片：
+```
+[发送图片]
+"录入这个食材，生产日期 2025-01-15，共 3 盒"
+```
+零配置，开箱即用。
 
-# 使用特定引擎
+### 方式二：命令行识别
+
+```bash
+# 本地 OCR（macOS Vision，免费，零配置）
 python3 scripts/food_analyzer.py --user robert scan --image chips.jpg --engine macos
+
+# 云端 OCR（可选，需配置 API key）
+python3 scripts/food_analyzer.py --user robert scan --image chips.jpg --engine custom
 
 # 主动更新条形码数据
 python3 scripts/food_analyzer.py --user robert update-by-barcode \
   --barcode 6941234567890 --calories 550 --protein 6.5
 ```
 
-**支持的 OCR 引擎**:
-- **Kimi Vision** (默认): 高精度，需要 API key
-- **macOS Vision**: 本地免费，无需网络
+**支持的 OCR 方式**:
+- **AI 助手识别** (推荐): 零配置，高精度，支持对话
+- **macOS Vision** (本地): 免费，无需网络，macOS 专用
+- **云端 OCR** (可选): 需配置 API key，支持多平台
 
 ## 数据管理
 
