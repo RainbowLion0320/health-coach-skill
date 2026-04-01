@@ -498,7 +498,8 @@ def main():
     # OCR scan and add (silent mode by default)
     scan_parser = subparsers.add_parser('scan', help='Scan food packaging with OCR')
     scan_parser.add_argument('--image', required=True, help='Image file path')
-    scan_parser.add_argument('--engine', choices=['auto', 'kimi', 'macos'], default='auto', help='OCR engine')
+    scan_parser.add_argument('--engine', choices=['auto', 'custom', 'macos'], default='auto', 
+                            help='OCR engine: auto (uses custom if API key set, else macOS), custom (cloud API, requires key), macos (local, free)')
     scan_parser.add_argument('--verbose', '-v', action='store_true', help='Show detailed comparison even if matched')
     scan_parser.add_argument('--threshold', type=float, default=10.0, help='Nutrition change threshold %% to prompt update (default: 10)')
     

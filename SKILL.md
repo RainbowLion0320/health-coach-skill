@@ -211,16 +211,29 @@ Backups are stored in:
 ## Configuration
 
 ### OCR Engine Setup
-Set environment variables for Kimi Vision (default):
+
+OCR 食品包装识别是**可选功能**，不配 API key 也能正常使用 NutriCoach 的核心功能。
+
+#### 本地识别（免费，默认）
+使用 macOS 内置 Vision 框架，无需配置，开箱即用：
 ```bash
-export OPENAI_API_KEY="your-api-key"
-export OPENAI_BASE_URL="https://api.moonshot.cn/v1"
+python3 scripts/food_analyzer.py --user <name> scan --image food.jpg
 ```
 
-Or use macOS Vision (free, local):
+#### 云端识别（可选，需 API key）
+如需更高识别精度，配置兼容 OpenAI 的 Vision API：
 ```bash
-python3 scripts/food_analyzer.py --user <name> scan --image food.jpg --engine macos
+export OPENAI_API_KEY="your-api-key"
+export OPENAI_BASE_URL="https://api.moonshot.cn/v1"  # 或其他 API 地址
+export VISION_MODEL="kimi-k2.5"  # 可选，默认为 kimi-k2.5
+python3 scripts/food_analyzer.py --user <name> scan --image food.jpg
 ```
+
+**说明：**
+- 当设置了 `OPENAI_API_KEY` 时，会自动使用云端识别
+- 未设置 API key 时，自动回退到本地 macOS Vision
+- 可显式指定 `--engine macos` 强制使用本地识别
+- 可显式指定 `--engine custom` 强制使用云端识别（需配置 key，否则报错）
 
 ## Food Database
 

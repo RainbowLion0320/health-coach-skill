@@ -73,43 +73,37 @@ def ocr_macos_vision(image_path: str) -> Dict[str, Any]:
     }
 
 
-def ocr_kimi_vision(image_path: str, api_key: Optional[str] = None) -> Dict[str, Any]:
+def ocr_custom_vision(image_path: str, api_key: str) -> Dict[str, Any]:
     """
-    Use Kimi Vision API for OCR.
-    Requires OPENAI_API_KEY or KIMI_API_KEY environment variable.
+    Use custom cloud Vision API for OCR.
+    Supports OpenAI-compatible APIs (e.g., Kimi, OpenAI, etc.)
+    Requires OPENAI_API_KEY or CUSTOM_VISION_API_KEY environment variable.
     """
     try:
         import openai
     except ImportError:
         return {
             "status": "error",
-            "engine": "kimi",
+            "engine": "custom",
             "error": "openai package not installed. Run: pip install openai",
-            "text": None
-        }
-    
-    # Get API key
-    key = api_key or os.environ.get("OPENAI_API_KEY") or os.environ.get("KIMI_API_KEY")
-    if not key:
-        return {
-            "status": "error",
-            "engine": "kimi",
-            "error": "API key not found. Set OPENAI_API_KEY or KIMI_API_KEY environment variable.",
             "text": None
         }
     
     # Determine base URL
     base_url = os.environ.get("OPENAI_BASE_URL") or "https://api.moonshot.cn/v1"
     
+    # Determine model
+    model = os.environ.get("VISION_MODEL") or "kimi-k2.5"
+    
     try:
-        client = openai.OpenAI(api_key=key, base_url=base_url)
+        client = openai.OpenAI(api_key=api_key, base_url=base_url)
         
         # Encode image
         base64_image = encode_image(image_path)
         
         # Call Vision API
         response = client.chat.completions.create(
-            model="kimi-k2.5",  # or modelstudio/kimi-k2.5
+            model=model,
             messages=[
                 {
                     "role": "user",
@@ -166,7 +160,7 @@ def ocr_kimi_vision(image_path: str, api_key: Optional[str] = None) -> Dict[str,
                 structured = json.loads(json_match.group())
                 return {
                     "status": "success",
-                    "engine": "kimi",
+                    "engine": "custom",
                     "text": content,
                     "structured": structured
                 }
@@ -176,7 +170,7 @@ def ocr_kimi_vision(image_path: str, api_key: Optional[str] = None) -> Dict[str,
         # Return raw text if JSON parsing fails
         return {
             "status": "success",
-            "engine": "kimi",
+            "engine": "custom",
             "text": content,
             "structured": None,
             "warning": "Could not parse structured data from response"
@@ -185,7 +179,7 @@ def ocr_kimi_vision(image_path: str, api_key: Optional[str] = None) -> Dict[str,
     except Exception as e:
         return {
             "status": "error",
-            "engine": "kimi",
+            "engine": "custom",
             "error": str(e),
             "text": None
         }
@@ -278,20 +272,31 @@ def recognize(args) -> Dict[str, Any]:
     engine = args.engine
     
     if engine == "auto":
-        # Try Kimi first, fallback to macOS
-        result = ocr_kimi_vision(image_path, args.api_key)
-        if result["status"] != "success":
-            print(f"Kimi OCR failed: {result.get('error')}, trying macOS Vision...", file=sys.stderr)
+        # Check if user has configured custom API key
+        custom_key = args.api_key or os.environ.get("OPENAI_API_KEY") or os.environ.get("CUSTOM_VISION_API_KEY")
+        if custom_key:
+            # User has configured API key, use cloud OCR
+            result = ocr_custom_vision(image_path, custom_key)
+        else:
+            # No API key configured, use local macOS Vision directly
             result = ocr_macos_vision(image_path)
-    elif engine == "kimi":
-        result = ocr_kimi_vision(image_path, args.api_key)
+    elif engine == "custom":
+        # User explicitly wants custom/cloud OCR
+        custom_key = args.api_key or os.environ.get("OPENAI_API_KEY") or os.environ.get("CUSTOM_VISION_API_KEY")
+        if not custom_key:
+            return {
+                "status": "error",
+                "error": "api_key_required",
+                "message": "Cloud OCR requires API key. Set OPENAI_API_KEY or CUSTOM_VISION_API_KEY environment variable, or use --engine macos for local recognition."
+            }
+        result = ocr_custom_vision(image_path, custom_key)
     elif engine == "macos":
         result = ocr_macos_vision(image_path)
     else:
         return {
             "status": "error",
             "error": "invalid_engine",
-            "message": f"Unknown engine: {engine}"
+            "message": f"Unknown engine: {engine}. Valid options: auto, macos, custom"
         }
     
     # If OCR succeeded but no structured data, try to parse
@@ -305,8 +310,8 @@ def recognize(args) -> Dict[str, Any]:
 def main():
     parser = argparse.ArgumentParser(description='Food packaging OCR')
     parser.add_argument('--image', required=True, help='Image file path')
-    parser.add_argument('--engine', choices=['auto', 'kimi', 'macos'], default='auto',
-                       help='OCR engine (default: auto)')
+    parser.add_argument('--engine', choices=['auto', 'custom', 'macos'], default='auto',
+                       help='OCR engine: auto (uses custom if API key set, else macOS), custom (cloud API, requires key), macos (local, free). Default: auto')
     parser.add_argument('--api-key', help='API key for Kimi (or set OPENAI_API_KEY env)')
     parser.add_argument('--raw', action='store_true', help='Output raw text only')
     
