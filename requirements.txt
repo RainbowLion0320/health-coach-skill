@@ -4,6 +4,9 @@
 # Database
 # sqlite3 (built-in)
 
+# Configuration
+pyyaml>=5.4.0
+
 # Web Dashboard (Optional)
 flask>=2.0.0
 
@@ -17,4 +20,3 @@ flask>=2.0.0
 # Development & Testing
 # pytest>=7.0.0
 # pytest-cov>=4.0.0
-# END

@@ -221,17 +221,40 @@ python3 scripts/food_analyzer.py --user <name> scan --image food.jpg
 ```
 
 #### 云端识别（可选，需 API key）
-如需更高识别精度，配置兼容 OpenAI 的 Vision API：
+如需更高识别精度，配置兼容 OpenAI 的 Vision API。
+
+**方式一：环境变量（临时）**
 ```bash
 export OPENAI_API_KEY="your-api-key"
-export OPENAI_BASE_URL="https://api.moonshot.cn/v1"  # 或其他 API 地址
-export VISION_MODEL="kimi-k2.5"  # 可选，默认为 kimi-k2.5
+export OPENAI_BASE_URL="https://api.moonshot.cn/v1"  # 可选
+export VISION_MODEL="kimi-k2.5"  # 可选
 python3 scripts/food_analyzer.py --user <name> scan --image food.jpg
 ```
 
+**方式二：配置文件（推荐，持久化）**
+
+1. 复制示例配置文件：
+```bash
+cp data/user_config.example.yaml data/user_config.yaml
+```
+
+2. 编辑 `data/user_config.yaml`，填入你的 API key：
+```yaml
+vision:
+  api_key: "your-api-key-here"
+  base_url: "https://api.moonshot.cn/v1"
+  model: "kimi-k2.5"
+```
+
+3. 直接使用（无需 export）：
+```bash
+python3 scripts/food_analyzer.py --user <name> scan --image food.jpg
+```
+
+**优先级：** 环境变量 > 配置文件 > 无配置（自动使用本地 OCR）
+
 **说明：**
-- 当设置了 `OPENAI_API_KEY` 时，会自动使用云端识别
-- 未设置 API key 时，自动回退到本地 macOS Vision
+- `user_config.yaml` 已被加入 `.gitignore`，不会意外提交到 git
 - 可显式指定 `--engine macos` 强制使用本地识别
 - 可显式指定 `--engine custom` 强制使用云端识别（需配置 key，否则报错）
 

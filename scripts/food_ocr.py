@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Food packaging OCR for Health Coach.
-Supports multiple engines: macOS Vision (local), Kimi Vision (API).
+Supports multiple engines: macOS Vision (local), custom cloud Vision (API).
 """
 
 import argparse
@@ -11,7 +11,68 @@ import os
 import re
 import subprocess
 import sys
+import yaml
 from typing import Dict, Any, Optional
+
+
+def get_config_path() -> str:
+    """Get user config file path."""
+    skill_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    return os.path.join(skill_dir, 'data', 'user_config.yaml')
+
+
+def load_user_config() -> Dict[str, Any]:
+    """Load user configuration from YAML file."""
+    config_path = get_config_path()
+    if os.path.exists(config_path):
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                return yaml.safe_load(f) or {}
+        except Exception:
+            pass
+    return {}
+
+
+def get_vision_api_key() -> Optional[str]:
+    """
+    Get Vision API key from environment or config file.
+    Priority: env var > config file > None
+    """
+    # Priority 1: Environment variable
+    api_key = os.environ.get("OPENAI_API_KEY") or os.environ.get("CUSTOM_VISION_API_KEY")
+    if api_key:
+        return api_key
+    
+    # Priority 2: Config file
+    config = load_user_config()
+    vision_config = config.get('vision', {})
+    return vision_config.get('api_key')
+
+
+def get_vision_base_url() -> str:
+    """Get Vision API base URL."""
+    # Priority 1: Environment variable
+    base_url = os.environ.get("OPENAI_BASE_URL")
+    if base_url:
+        return base_url
+    
+    # Priority 2: Config file
+    config = load_user_config()
+    vision_config = config.get('vision', {})
+    return vision_config.get('base_url', 'https://api.moonshot.cn/v1')
+
+
+def get_vision_model() -> str:
+    """Get Vision model name."""
+    # Priority 1: Environment variable
+    model = os.environ.get("VISION_MODEL")
+    if model:
+        return model
+    
+    # Priority 2: Config file
+    config = load_user_config()
+    vision_config = config.get('vision', {})
+    return vision_config.get('model', 'kimi-k2.5')
 
 
 def encode_image(image_path: str) -> str:
@@ -89,11 +150,9 @@ def ocr_custom_vision(image_path: str, api_key: str) -> Dict[str, Any]:
             "text": None
         }
     
-    # Determine base URL
-    base_url = os.environ.get("OPENAI_BASE_URL") or "https://api.moonshot.cn/v1"
-    
-    # Determine model
-    model = os.environ.get("VISION_MODEL") or "kimi-k2.5"
+    # Determine base URL and model from config
+    base_url = get_vision_base_url()
+    model = get_vision_model()
     
     try:
         client = openai.OpenAI(api_key=api_key, base_url=base_url)
@@ -272,8 +331,8 @@ def recognize(args) -> Dict[str, Any]:
     engine = args.engine
     
     if engine == "auto":
-        # Check if user has configured custom API key
-        custom_key = args.api_key or os.environ.get("OPENAI_API_KEY") or os.environ.get("CUSTOM_VISION_API_KEY")
+        # Check if user has configured custom API key (env var or config file)
+        custom_key = args.api_key or get_vision_api_key()
         if custom_key:
             # User has configured API key, use cloud OCR
             result = ocr_custom_vision(image_path, custom_key)
@@ -282,12 +341,12 @@ def recognize(args) -> Dict[str, Any]:
             result = ocr_macos_vision(image_path)
     elif engine == "custom":
         # User explicitly wants custom/cloud OCR
-        custom_key = args.api_key or os.environ.get("OPENAI_API_KEY") or os.environ.get("CUSTOM_VISION_API_KEY")
+        custom_key = args.api_key or get_vision_api_key()
         if not custom_key:
             return {
                 "status": "error",
                 "error": "api_key_required",
-                "message": "Cloud OCR requires API key. Set OPENAI_API_KEY or CUSTOM_VISION_API_KEY environment variable, or use --engine macos for local recognition."
+                "message": "Cloud OCR requires API key. Set OPENAI_API_KEY environment variable, or create data/user_config.yaml, or use --engine macos for local recognition."
             }
         result = ocr_custom_vision(image_path, custom_key)
     elif engine == "macos":

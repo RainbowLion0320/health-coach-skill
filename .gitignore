@@ -2,6 +2,10 @@
 data/
 backups/
 
+# User configuration (contains API keys)
+**/user_config.yaml
+**/config.yaml
+
 # Database files
 *.db
 *.db-journal
