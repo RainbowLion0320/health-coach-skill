@@ -142,8 +142,8 @@ python3 scripts/diet_recommender.py --user <name> daily-plan
 ### 支持的 OCR 引擎
 | 引擎 | 精度 | 成本 | 适用场景 |
 |-----|------|------|---------|
-| **Kimi Vision** | ⭐⭐⭐⭐⭐ | 低（已有key） | 默认推荐 |
-| **macOS Vision** | ⭐⭐⭐ | 免费 | 备选/离线 |
+| **Cloud Vision** | ⭐⭐⭐⭐⭐ | 需 API key | 配置后自动使用 |
+| **macOS Vision** | ⭐⭐⭐ | 免费 | 默认/无配置时 |
 
 ### 核心特性
 - **条形码优先匹配**：精准识别同款商品
@@ -166,11 +166,14 @@ python3 scripts/food_analyzer.py --user <name> scan --image chips.jpg
 
 #### 2. 指定 OCR 引擎
 ```bash
-# 使用 Kimi（默认）
-python3 scripts/food_analyzer.py --user robert scan --image chips.jpg --engine kimi
+# 自动选择（有 API key 用云端，否则用本地）
+python3 scripts/food_analyzer.py --user robert scan --image chips.jpg
 
-# 使用 macOS Vision（本地免费）
+# 强制使用本地（macOS Vision）
 python3 scripts/food_analyzer.py --user robert scan --image chips.jpg --engine macos
+
+# 强制使用云端（需配置 API key）
+python3 scripts/food_analyzer.py --user robert scan --image chips.jpg --engine custom
 ```
 
 #### 3. 主动更新
@@ -192,11 +195,30 @@ python3 scripts/food_analyzer.py --user <name> update-by-barcode \
 3. **完整性**：确保营养成分表完整入镜
 
 ### 配置
+
+**方式一：配置文件（推荐，持久化）**
+
+1. 复制示例配置：
 ```bash
-# 环境变量
+cp data/user_config.example.yaml data/user_config.yaml
+```
+
+2. 编辑 `data/user_config.yaml`：
+```yaml
+vision:
+  api_key: "your-api-key"
+  base_url: "https://api.moonshot.cn/v1"
+  model: "kimi-k2.5"
+```
+
+**方式二：环境变量（临时）**
+```bash
 export OPENAI_API_KEY="your-api-key"
 export OPENAI_BASE_URL="https://api.moonshot.cn/v1"
+export VISION_MODEL="kimi-k2.5"
 ```
+
+**优先级**：环境变量 > 配置文件 > 无配置（使用本地 OCR）
 
 ---
 

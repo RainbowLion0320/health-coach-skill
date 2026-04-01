@@ -135,24 +135,24 @@ Benefits:
 
 ## Configuration
 
-Global config: `config/nutricoach.yaml`
+### User Configuration
+
+User-specific config: `data/user_config.yaml` (not in git)
 
 ```yaml
-# Nutrition calculation
-bmr_formula: mifflin_st_jeor  # or harris_benedict, katch_mcardle
-activity_multipliers:
-  sedentary: 1.2
-  light: 1.375
-  moderate: 1.55
-  active: 1.725
-  very_active: 1.9
-
-# Recommendation settings
-default_macro_split:
-  protein_pct: 30
-  carbs_pct: 40
-  fat_pct: 30
-
-# Data retention
-keep_history_days: 365
+# Vision OCR Configuration (Optional)
+vision:
+  api_key: "your-api-key"
+  base_url: "https://api.moonshot.cn/v1"
+  model: "kimi-k2.5"
 ```
+
+**Priority**: Environment variable > Config file > Default (local OCR)
+
+### Global Defaults
+
+Default values are hardcoded in scripts:
+- BMR formula: Mifflin-St Jeor
+- Activity multipliers: standard values
+- Macro split: 30/40/30 (protein/carbs/fat)
+- Data retention: 365 days
