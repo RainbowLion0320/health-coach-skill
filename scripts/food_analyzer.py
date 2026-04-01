@@ -171,42 +171,61 @@ def list_categories(args) -> Dict[str, Any]:
 
 
 def scan_and_match(args) -> Dict[str, Any]:
-    """Scan packaging with OCR and match with database."""
+    """Scan packaging with OCR and match with database.
+    
+    OCR priority:
+    1. If running in agent context (image data available), use agent vision
+    2. Otherwise, use external OCR (local or cloud)
+    """
     import subprocess
     import tempfile
     
     # Step 1: OCR
-    ocr_cmd = [
-        'python3', 
-        os.path.join(os.path.dirname(__file__), 'food_ocr.py'),
-        '--image', args.image,
-        '--engine', args.engine
-    ]
-    
-    try:
-        ocr_result = subprocess.run(ocr_cmd, capture_output=True, text=True, timeout=60)
-        if ocr_result.returncode != 0:
-            return {
-                "status": "error",
-                "error": "ocr_failed",
-                "message": f"OCR failed: {ocr_result.stderr}"
-            }
-        
-        ocr_data = json.loads(ocr_result.stdout)
-        
-        if ocr_data.get("status") != "success":
-            return {
-                "status": "error",
-                "error": "ocr_failed",
-                "message": ocr_data.get("error", "OCR failed")
-            }
-        
-    except Exception as e:
-        return {
-            "status": "error",
-            "error": "ocr_error",
-            "message": str(e)
+    # Check if we have direct image access (agent context)
+    if hasattr(args, '_image_data') and args._image_data:
+        # Use agent vision - already processed
+        ocr_data = {
+            "status": "success",
+            "engine": "agent_vision",
+            "structured": args._image_data,
+            "text": None
         }
+    else:
+        # Use external OCR
+        ocr_cmd = [
+            'python3', 
+            os.path.join(os.path.dirname(__file__), 'food_ocr.py'),
+            '--image', args.image,
+            '--engine', args.engine
+        ]
+        
+        try:
+            ocr_result = subprocess.run(ocr_cmd, capture_output=True, text=True, timeout=60)
+            if ocr_result.returncode != 0:
+                return {
+                    "status": "error",
+                    "error": "ocr_failed",
+                    "message": f"OCR failed: {ocr_result.stderr}\n\n提示：如需使用云端 OCR，请配置 data/user_config.yaml 或设置 OPENAI_API_KEY 环境变量。"
+                }
+            
+            ocr_data = json.loads(ocr_result.stdout)
+            
+            if ocr_data.get("status") != "success":
+                error_msg = ocr_data.get("error", "OCR failed")
+                if "api_key" in error_msg.lower() or "authentication" in error_msg.lower():
+                    error_msg += "\n\n提示：请配置 OCR API key：\n1. 复制 data/user_config.example.yaml → data/user_config.yaml\n2. 填入你的 API key\n\n或使用本地 OCR：--engine macos"
+                return {
+                    "status": "error",
+                    "error": "ocr_failed",
+                    "message": error_msg
+                }
+            
+        except Exception as e:
+            return {
+                "status": "error",
+                "error": "ocr_error",
+                "message": str(e)
+            }
     
     # Step 2: Match with database
     with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:

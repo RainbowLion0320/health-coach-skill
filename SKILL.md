@@ -212,51 +212,58 @@ Backups are stored in:
 
 ### OCR Engine Setup
 
-OCR 食品包装识别是**可选功能**，不配 API key 也能正常使用 NutriCoach 的核心功能。
+OCR 食品包装识别支持多种方式，**零配置即可使用**。
 
-#### 本地识别（免费，默认）
-使用 macOS 内置 Vision 框架，无需配置，开箱即用：
-```bash
-python3 scripts/food_analyzer.py --user <name> scan --image food.jpg
+#### 方式一：AI 助手识别（推荐，零配置）
+
+如果你使用 AI 助手（如 OpenClaw），直接发送食品包装图片：
+
+```
+[发送图片]
+"录入这个食材，生产日期 2025-01-15"
 ```
 
-#### 云端识别（可选，需 API key）
-如需更高识别精度，配置兼容 OpenAI 的 Vision API。
+助手会直接识别图片并录入，**无需任何配置**。
 
-**方式一：环境变量（临时）**
+#### 方式二：本地识别（命令行，免费）
+
+使用 macOS 内置 Vision 框架，无需配置：
 ```bash
-export OPENAI_API_KEY="your-api-key"
-export OPENAI_BASE_URL="https://api.moonshot.cn/v1"  # 可选
-export VISION_MODEL="kimi-k2.5"  # 可选
-python3 scripts/food_analyzer.py --user <name> scan --image food.jpg
+python3 scripts/food_analyzer.py --user <name> scan --image food.jpg --engine macos
 ```
 
-**方式二：配置文件（推荐，持久化）**
+#### 方式三：云端识别（命令行，可选）
 
-1. 复制示例配置文件：
+如需更高识别精度，配置云端 Vision API：
+
+**步骤 1：创建配置文件**
 ```bash
 cp data/user_config.example.yaml data/user_config.yaml
 ```
 
-2. 编辑 `data/user_config.yaml`，填入你的 API key：
+**步骤 2：填入 API key**
 ```yaml
 vision:
-  api_key: "your-api-key-here"
-  base_url: "https://api.moonshot.cn/v1"
+  api_key: "your-api-key"
+  base_url: "https://api.moonshot.cn/v1"  # 或其他兼容 OpenAI 的 API
   model: "kimi-k2.5"
 ```
 
-3. 直接使用（无需 export）：
+**步骤 3：使用**
 ```bash
 python3 scripts/food_analyzer.py --user <name> scan --image food.jpg
 ```
 
-**优先级：** 环境变量 > 配置文件 > 无配置（自动使用本地 OCR）
+**支持的 API 提供商：**
+- Moonshot (Kimi)
+- OpenAI
+- 阿里 DashScope
+- 其他兼容 OpenAI 接口的服务
 
 **说明：**
-- `user_config.yaml` 已被加入 `.gitignore`，不会意外提交到 git
-- 可显式指定 `--engine macos` 强制使用本地识别
-- 可显式指定 `--engine custom` 强制使用云端识别（需配置 key，否则报错）
+- `user_config.yaml` 已被加入 `.gitignore`，不会意外提交
+- 云端 OCR 仅在命令行模式下需要配置
+- AI 助手模式始终优先使用助手内置的视觉能力
 
 ## Food Database
 
