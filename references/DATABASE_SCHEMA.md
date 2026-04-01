@@ -524,3 +524,88 @@ END;
    - 乳制品（dairy）：'ml'
    - 饮料（beverage）：'ml'
    - 其他：'g'
+---
+
+## 2026-04-01 更新：新增表
+
+### exercises
+
+运动记录表，追踪用户运动数据。
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | INTEGER | PRIMARY KEY AUTOINCREMENT | 运动记录ID |
+| user_id | INTEGER | FOREIGN KEY users(id) ON DELETE CASCADE | 用户ID |
+| exercise_type | TEXT | NOT NULL | 运动类型（如：running, cycling, swimming） |
+| duration_minutes | INTEGER | NOT NULL | 运动时长（分钟） |
+| calories_burned | REAL | DEFAULT 0 | 消耗卡路里 |
+| intensity | TEXT | DEFAULT 'moderate' | 强度（light/moderate/intense） |
+| notes | TEXT | | 备注 |
+| exercised_at | DATETIME | DEFAULT CURRENT_TIMESTAMP | 运动时间 |
+| created_at | DATETIME | DEFAULT CURRENT_TIMESTAMP | 创建时间 |
+
+**Indexes:**
+- `idx_exercises_user_date` ON user_id, exercised_at
+
+---
+
+### water_intake
+
+饮水记录表，追踪每日饮水量。
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | INTEGER | PRIMARY KEY AUTOINCREMENT | 记录ID |
+| user_id | INTEGER | FOREIGN KEY users(id) ON DELETE CASCADE | 用户ID |
+| amount_ml | INTEGER | NOT NULL | 饮水量（毫升） |
+| logged_at | DATETIME | DEFAULT CURRENT_TIMESTAMP | 记录时间 |
+
+**Indexes:**
+- `idx_water_user_date` ON user_id, logged_at
+
+**默认目标:** 2000ml/天
+
+---
+
+### sleep_records
+
+睡眠记录表，追踪睡眠时长和质量。
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | INTEGER | PRIMARY KEY AUTOINCREMENT | 记录ID |
+| user_id | INTEGER | FOREIGN KEY users(id) ON DELETE CASCADE | 用户ID |
+| sleep_hours | REAL | NOT NULL | 睡眠时长（小时） |
+| sleep_quality | TEXT | CHECK IN ('poor', 'fair', 'good', 'excellent') | 睡眠质量 |
+| sleep_start | DATETIME | NOT NULL | 入睡时间 |
+| sleep_end | DATETIME | NOT NULL | 起床时间 |
+| notes | TEXT | | 备注 |
+| created_at | DATETIME | DEFAULT CURRENT_TIMESTAMP | 创建时间 |
+
+**Indexes:**
+- `idx_sleep_user_date` ON user_id, sleep_start
+
+**质量等级:**
+- `poor`: 较差
+- `fair`: 一般
+- `good`: 良好
+- `excellent`: 优秀
+
+---
+
+### user_settings
+
+用户设置表，存储用户偏好。
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | INTEGER | PRIMARY KEY AUTOINCREMENT | 设置ID |
+| user_id | INTEGER | FOREIGN KEY users(id) ON DELETE CASCADE, UNIQUE | 用户ID |
+| language | TEXT | DEFAULT 'zh-CN' | 语言偏好 |
+| created_at | DATETIME | DEFAULT CURRENT_TIMESTAMP | 创建时间 |
+| updated_at | DATETIME | DEFAULT CURRENT_TIMESTAMP | 更新时间 |
+
+**支持的 languages:**
+- `zh-CN`: 简体中文
+- `en-US`: English (US)
+
